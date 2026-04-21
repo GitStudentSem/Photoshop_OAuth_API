@@ -1,0 +1,23 @@
+{
+  "name": "oauthapi",
+  "version": "1.0.0",
+  "description": "Пакет Авторизации для Photoshop плагинов",
+  "main": "OAuth.ts",
+  "publishConfig": {
+    "registry": "https://nexus.example.com/repository/npm-internal/"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GitStudentSem/Photoshop_OAuth_API.git"
+  },
+  "keywords": [],
+  "author": "Semen Purnemtzev <s.purnemcev@retouch4.me>",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/GitStudentSem/Photoshop_OAuth_API/issues"
+  },
+  "homepage": "https://github.com/GitStudentSem/Photoshop_OAuth_API#readme"
+}
