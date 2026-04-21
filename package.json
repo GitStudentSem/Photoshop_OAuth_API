@@ -1,5 +1,5 @@
 {
-  "name": "oauthapi",
+  "name": "@relu-ps/oauth-api",
   "version": "1.0.0",
   "description": "Пакет Авторизации для Photoshop плагинов",
   "main": "OAuth.ts",
