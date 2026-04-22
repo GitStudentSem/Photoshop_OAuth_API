@@ -1,11 +1,12 @@
 {
   "name": "@relu-ps/oauth-api",
-  "version": "1.0.0",
+  "version": "1.0.0-test.0",
   "description": "Пакет Авторизации для Photoshop плагинов",
   "main": "OAuth.ts",
   "publishConfig": {
     "registry": "https://nexus.example.com/repository/npm-internal/"
   },
+  "files": ["dist"],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
