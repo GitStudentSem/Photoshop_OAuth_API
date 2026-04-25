@@ -278,6 +278,99 @@ export default class OauthAPI {
     }
   }
 
+  async getOnlineRegistrationKey({
+    email,
+    programName,
+    deviceId,
+    installationId,
+    platform,
+    session,
+    withkey = false,
+    subscription = false,
+    onLogout = () => {},
+  }: {
+    email: string;
+    programName: string;
+    deviceId: string;
+    installationId: string;
+    platform: string;
+    session: string;
+    withkey?: boolean;
+    subscription?: boolean;
+    onLogout?: () => void;
+  }) {
+    // Определяем ОС через UXP
+    if (platform === 'win32') platform = 'win';
+    if (platform === 'win10') platform = 'win';
+    else if (platform === 'darwin') platform = 'mac';
+
+    // let url = 'https://retouch4.me/products/cloud-retouch/304';
+    let url = 'https://3dlutcreator.com/getsubscriptionkey.php';
+    const queryParams = [
+      `email=${encodeURIComponent(email)}`,
+      `application=${encodeURIComponent(programName)}`,
+      `deviceid=${encodeURIComponent(deviceId)}`,
+      `installationid=${encodeURIComponent(installationId)}`,
+      `session=${encodeURIComponent(session)}`,
+    ];
+
+    if (platform) queryParams.push(`os=${platform}`);
+    if (withkey) queryParams.push('confirm=1');
+    if (subscription) queryParams.push('momentary=1');
+
+    url += '?' + queryParams.join('&');
+
+    try {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP status: ${response.status} message: ${response.statusText}`,
+        );
+      }
+
+      const text = await response.text();
+
+      if (!text.trim()) {
+        throw new Error('Server response is empty');
+      }
+
+      // Пытаемся распарсить JSON
+      let json;
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error('JSON payload is missing in server response');
+        }
+        json = JSON.parse(jsonMatch[0]);
+      } catch (e) {
+        throw new Error('Failed to parse server response');
+      }
+
+      const result = {
+        error: json.error,
+        errorMsg: json.errormsg || '',
+        key: json.key || '',
+        keysleft: json.keysleft || 0,
+        keylimit: json.keylimit || 0,
+        keycount: json.keyscount || 0,
+      };
+
+      if (result.error === 'WEBAPIERROR_SESSION_INVALID') {
+        throw new Error('Session is invalid');
+      }
+      const noKeysLeft = result.keysleft === 0 && !result.key;
+      const keysLmit = result.keylimit === result.keycount && !result.key;
+      if (noKeysLeft || keysLmit) {
+        throw new Error('No keys left');
+      }
+      return result;
+    } catch (error) {
+      onLogout();
+      throw error;
+    }
+  }
+
   /**
    * Obtaining an access token without using the user's email
    * P.S. I didn't use this method, it wasn't ready yet
