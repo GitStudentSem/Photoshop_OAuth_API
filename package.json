@@ -2,13 +2,16 @@
   "name": "@relu-ps/oauth-api",
   "version": "1.0.0-test.0",
   "description": "Пакет Авторизации для Photoshop плагинов",
-  "main": "OAuth.ts",
+  "main": "dist/OauthAPI.js",
+  "types": "dist/OauthAPI.d.ts",
   "publishConfig": {
     "registry": "https://nexus.example.com/repository/npm-internal/"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc"
   },
   "repository": {
     "type": "git",
@@ -20,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/GitStudentSem/Photoshop_OAuth_API/issues"
   },
-  "homepage": "https://github.com/GitStudentSem/Photoshop_OAuth_API#readme"
+  "homepage": "https://github.com/GitStudentSem/Photoshop_OAuth_API#readme",
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
 }

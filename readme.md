@@ -19,8 +19,7 @@ dist/
 
 ## Шаг 1. Доступ в Nexus
 
-1. Зарегистрируйтесь в Nexus: [nexus.hz.labs.retouch4.me](https://nexus.hz.labs.retouch4.me/#browse/browse:relu).
-2. Получите логин и пароль.
+1. Получите логин и пароль для [nexus.hz.labs.retouch4.me](https://nexus.hz.labs.retouch4.me/#browse/browse:relu) в чате retoucher API.
 
 ## Шаг 2. Настройка `.npmrc`
 
