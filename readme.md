@@ -89,7 +89,7 @@ npm version patch
 3. Соберите проект:
 
 ```bash
-npm run build
+npm run build:prod
 ```
 
 4. Опубликуйте пакет:

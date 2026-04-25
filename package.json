@@ -11,7 +11,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "minify": "node scripts/minify-dist.mjs",
+    "build:prod": "npm run build && npm run minify"
   },
   "repository": {
     "type": "git",
@@ -25,6 +27,7 @@
   },
   "homepage": "https://github.com/GitStudentSem/Photoshop_OAuth_API#readme",
   "devDependencies": {
+    "terser": "^5.46.2",
     "typescript": "^6.0.3"
   }
 }
