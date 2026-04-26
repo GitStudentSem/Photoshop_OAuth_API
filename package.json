@@ -13,7 +13,8 @@
   "scripts": {
     "build": "tsc && node scripts/copy-types.mjs",
     "minify": "node scripts/minify-dist.mjs",
-    "build:prod": "npm run build && npm run minify"
+    "build:prod": "npm run build && npm run minify",
+    "docs": "typedoc"
   },
   "repository": {
     "type": "git",
@@ -28,6 +29,7 @@
   "homepage": "https://github.com/GitStudentSem/Photoshop_OAuth_API#readme",
   "devDependencies": {
     "terser": "^5.46.2",
+    "typedoc": "^0.28.19",
     "typescript": "^6.0.3"
   }
 }

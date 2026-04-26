@@ -1,7 +1,7 @@
 node_modules
 plugin/keys
 dist/
-keys/
 .DS_Store
 .npmrc
 *.tgz
+docs/
