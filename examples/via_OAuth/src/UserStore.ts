@@ -50,6 +50,9 @@ class UserStore {
     this.isAuth = false;
     localStorage.removeItem('isAuth');
 
+    this.userName = ""
+    localStorage.removeItem('userName')
+
     this.userEmail = "";
     localStorage.removeItem('userEmail');
 
@@ -57,6 +60,7 @@ class UserStore {
     localStorage.removeItem('remainingRetouch');
 
     localStorage.removeItem('accessToken');
+    localStorage.removeItem("accessTokenType");
     localStorage.removeItem('retouchToken');
   }
 }
