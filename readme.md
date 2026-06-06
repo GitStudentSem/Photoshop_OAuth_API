@@ -1,99 +1,112 @@
-# Публикация npm-пакета в Nexus
+# @relu-ps/oauth-api
 
-Инструкция для подготовки и публикации npm-пакета в Nexus.
+Библиотека OAuth-авторизации для Photoshop-плагинов (UXP). Инкапсулирует взаимодействие с серверами Retouch4me: получение OAuth-токена, профиля пользователя, retouch-токена и онлайн-ключа регистрации.
 
-## Шаг 0. Подготовка git-репозитория
+## Установка
 
-1. Создайте отдельный репозиторий под пакет.
-2. Добавьте в `.gitignore` минимум следующие записи:
-
-```gitignore
-node_modules
-dist/
-.DS_Store
-.npmrc
-*.tgz
-```
-
-3. Добавьте другие служебные/локальные файлы, которые не должны попадать в git.
-
-## Шаг 1. Доступ в Nexus
-
-1. Получите логин и пароль для [nexus.hz.labs.retouch4.me](https://nexus.hz.labs.retouch4.me/#browse/browse:relu) в чате retoucher API.
-
-## Шаг 2. Настройка `.npmrc`
-
-1. Сгенерируйте base64-токен на компьютере:
+Пакет публикуется во внутренний Nexus-репозиторий. Настройте `.npmrc` (см. [PUBLISHING.md](./PUBLISHING.md)) и установите зависимость:
 
 ```bash
-echo -n 'login:pass' | openssl base64
+npm install @relu-ps/oauth-api
 ```
 
-2. Добавьте настройки в локальный `.npmrc`:
+## Быстрый старт
 
-```ini
-//nexus.hz.labs.retouch4.me/repository/relu/:_auth="{echo_base64_token}"
+```ts
+import OauthAPI from "@relu-ps/oauth-api";
 
-@relu:registry=https://nexus.hz.labs.retouch4.me/repository/relu/
-@relu-ps:registry=https://nexus.hz.labs.retouch4.me/repository/relu/
+const oauth = new OauthAPI((type, error) => {
+  console.error(error);
+});
 
-email=your-work-email@example.com
-always-auth=true
-```
+// 1. Сформировать ссылку для авторизации в браузере (PKCE)
+const link = oauth.getLink(deviceId, codeVerifier, codeChallenge);
 
-> Важно: `.npmrc` содержит чувствительные данные, не коммитьте его в репозиторий.
+// 2. После того как пользователь авторизовался — получить токен
+const tokenResult = await oauth.getToken(codeVerifier);
+if (!tokenResult.failed) {
+  const { access_token, token_type } = tokenResult.data;
 
-## Шаг 3. Настройка `package.json`
-
-1. Используйте scope `@relu-ps` в имени пакета:
-
-```json
-"name": "@relu-ps/oauth-api"
-```
-
-2. Добавьте `publishConfig`:
-
-```json
-"publishConfig": {
-  "registry": "https://nexus.example.com/repository/npm-internal/"
+  // 3. Загрузить профиль
+  const profileResult = await oauth.getProfile(token_type, access_token);
+  if (!profileResult.failed) {
+    console.log(profileResult.data.mail, profileResult.data.name);
+  }
 }
 ```
 
-3. Ограничьте публикуемые файлы только собранной директорией:
+Полный рабочий пример с polling, хранением сессии и UI — в [`examples/via_OAuth`](./examples/via_OAuth).
 
-```json
-"files": ["dist"]
+## API
+
+### Конструктор
+
+```ts
+new OauthAPI(errorHandler: ErrorHandlerType)
 ```
 
-Это нужно, чтобы в Nexus уходил не весь исходный код, а только собранная версия.
+`errorHandler` вызывается при ошибках внутри библиотеки. Все публичные методы (кроме `getOnlineRegistrationKey`) не бросают исключения, а возвращают `{ failed: true, data: ErrorType }`.
 
-## Шаг 4. Сборка и публикация
+### Методы
 
-1. Проверьте содержимое пакета:
+| Метод | Описание |
+| --- | --- |
+| `getLink(deviceId, codeVerifier, codeChallenge)` | URL для открытия в браузере и старта OAuth (PKCE, client `retouch4me_photoshop_panel`) |
+| `getToken(codeVerifier)` | Получение access token по code verifier |
+| `getProfile(tokenType, token)` | Профиль пользователя по OAuth-токену |
+| `getRetouchToken(email, session, deviceId, application)` | Retouch-токен и остаток ретушей |
+| `getRetouchTokenWithoutEmail(session)` | Альтернативный способ получения токена без email |
+| `getOnlineRegistrationKey(params)` | Онлайн-ключ регистрации / подписки |
+| `setBaseUrl({ lutCreatorBaseUrl, retouch4meBaseUrl })` | Переключение на stage или другой хост |
+| `setFullUrl(links)` | Полная замена всех endpoint URL |
 
-```bash
-npm pack
-tar -tzf relu-ps-oauth-api-1.0.0.tgz
+### Окружения
+
+По умолчанию используются production-адреса `retouch4.me` и `3dlutcreator.com`. Для stage:
+
+```ts
+oauth.setBaseUrl({
+  retouch4meBaseUrl: "https://stage7.reludo.yatsyk.com",
+  lutCreatorBaseUrl: "https://3dcom7.reludo.yatsyk.com",
+});
 ```
 
-2. Обновите версию проекта:
+### Типы
+
+TypeScript-типы (`GetTokenDataType`, `GetProfileDataType`, `ErrorType` и др.) поставляются вместе с пакетом в `dist/OauthAPI.d.ts`.
+
+## Разработка
 
 ```bash
-npm version major
-# или
-npm version minor
-# или
-npm version patch
-```
+# Установка зависимостей
+npm install
 
-3. Соберите проект:
+# Сборка (TypeScript → dist/)
+npm run build
 
-```bash
+# Production-сборка с минификацией
 npm run build:prod
+
+# Генерация API-документации (TypeDoc → docs/)
+npm run docs
 ```
 
-4. Опубликуйте пакет:
+### Структура проекта
 
-```bash
-npm publish
 ```
+src/
+  OauthAPI.ts      # основной класс
+  OAuthTypes.d.ts  # типы ответов и ошибок
+dist/              # собранный пакет (публикуется в Nexus)
+examples/
+  via_OAuth/       # пример UXP-плагина
+scripts/           # copy-types, minify
+```
+
+## Публикация
+
+Инструкция по публикации в Nexus: [PUBLISHING.md](./PUBLISHING.md).
+
+## Лицензия
+
+Внутренний пакет Retouch4me.
