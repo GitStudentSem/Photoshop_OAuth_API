@@ -122,7 +122,7 @@ export const getRetouchToken = async (): Promise<void> => {
     const stringToHash = accessToken + RETOUCH_HASH_PARAM;
     const hash = hasher.finalize(stringToHash);
     return hash.toString(CryptoJS.enc.Hex);
-  };
+  }; 
 
   const email = localStorage.getItem("userEmail");
 
