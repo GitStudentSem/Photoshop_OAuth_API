@@ -1,10 +1,11 @@
 import CryptoJS from 'crypto-js';
 import { shell } from 'uxp';
 import OAuthAPI from '@relu-ps/oauth-api';
-import UserStore from './UserStore.js';
-import { appInfo, initAppInfo } from './appInfo.js';
+import UserStore from './UserStore';
+import { appInfo, initAppInfo } from './appInfo';
+import os from 'os';
 
-const catchError = (userMessage, error, methodName, fileName) => {
+const catchError = (userMessage:string, error:Error, methodName:string, fileName:string) => {
   console.error({
     userMessage,
     error: {
@@ -15,7 +16,7 @@ const catchError = (userMessage, error, methodName, fileName) => {
   });
 };
 
-const checkInternetConnection = (actionName) => {
+const checkInternetConnection = (actionName:string) => {
   const isOnline = navigator.onLine;
   if (!isOnline) {
     console.error({
@@ -32,9 +33,9 @@ export const oauth = new OAuthAPI((type, error, isShowLog) =>
 
 const FILE_NAME = 'auth';
 
-let pullingTimer;
+let pullingTimer:NodeJS.Timeout | undefined;
 
-const getToken = (codeVerifier) => {
+const getToken = (codeVerifier:string) => {
   return new Promise((resolve, reject) => {
     let limit = 0;
 
@@ -65,7 +66,7 @@ const getToken = (codeVerifier) => {
           localStorage.setItem('accessToken', token.data.access_token);
 
           await getProfile(token.data.token_type, token.data.access_token);
-          resolve();
+          resolve(void 0);
           return;
         }
 
@@ -84,7 +85,7 @@ const getToken = (codeVerifier) => {
   });
 };
 
-const getProfile = async (tokenType, accessToken) => {
+const getProfile = async (tokenType:string, accessToken:string) => {
   const profile = await oauth.getProfile(tokenType, accessToken);
 
   if (profile.failed === false) {
@@ -136,6 +137,7 @@ export const getLicenceKey = async () => {
     session: generateSession(),
     withkey: true,
     subscription: false,
+    platform: os.platform(),
     onLogout: () => {
       UserStore.logout();
     },

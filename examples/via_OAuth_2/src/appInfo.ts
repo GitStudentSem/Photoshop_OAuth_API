@@ -1,4 +1,4 @@
-import { generateDeviceId } from '../src/utils/generateDeviceId.js';
+import { generateDeviceId } from './generateDeviceId';
 
 let _deviceId = '';
 let _installationId = '';
