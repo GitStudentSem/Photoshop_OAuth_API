@@ -25,3 +25,4 @@
 
 - `client_id` / `programName`: `retouch4me_vectorscope_panel` (как в vectorscope, не `retouch4me_photoshop_panel` из npm по умолчанию)
 - Ссылка авторизации строится через `getAuthLink()`, т.к. npm-пакет использует другой client_id
+- Генерация RSA-ключей и подпись лицензий: см. [`../rsa-keygen`](../rsa-keygen)

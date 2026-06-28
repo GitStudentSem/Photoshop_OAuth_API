@@ -1,0 +1,21 @@
+{
+  "name": "@relu-ps/rsa-license-keygen",
+  "version": "1.0.0",
+  "description": "CLI for RSA-256 license key generation, signing and verification (Retouch4me OAuth panels)",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "rsa-keygen": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "keygen": "npm run build && node dist/cli.js",
+    "test:rsa": "npm run build && node dist/test-rsa.js",
+    "dev": "tsx src/cli.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
