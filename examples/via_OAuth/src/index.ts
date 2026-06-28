@@ -191,19 +191,32 @@ export const onAuth = async (): Promise<void> => {
 };
 
 const setUserInfo = () => {
+
   const { isAuth, userEmail, userName, remainingRetouch } = UserStore;
+const userEmailElement = document.getElementById("userEmail");
+const userNameElement = document.getElementById("userName");
+const remainingRetouchElement = document.getElementById("remainingRetouch");
+
+  if (!userEmailElement ) {
+    throw new Error("User info userEmailElement not found");
+  }
+  if (!userNameElement ) {
+    throw new Error("User info userNameElement not found");
+  }
+  if (!remainingRetouchElement) {
+    throw new Error("User info remainingRetouchElement not found");
+  }
 
   if (isAuth) {
-    document.getElementById("userEmail")!.textContent = `Email: ${userEmail}`;
-    document.getElementById("userName")!.textContent = `User Name: ${userName}`;
-    document.getElementById("remainingRetouch")!.textContent =
-      `remaining retouches: ${remainingRetouch}`;
+    userEmailElement!.textContent = `Email: ${userEmail}`;
+    userNameElement!.textContent = `User Name: ${userName}`;
+    remainingRetouchElement!.textContent = `remaining retouches: ${remainingRetouch}`;
   } else {
-    document.getElementById("userEmail")!.textContent = "Email:";
-    document.getElementById("userName")!.textContent = "User Name:";
-    document.getElementById("remainingRetouch")!.textContent =
-      "remaining retouches: 0";
-  }
+    userEmailElement!.textContent = "Email:";
+      userNameElement!.textContent = "User Name:";
+      remainingRetouchElement!.textContent = "remaining retouches: 0";
+    }
+
 };
 
 async function onAuthorizeClick(): Promise<void> {
