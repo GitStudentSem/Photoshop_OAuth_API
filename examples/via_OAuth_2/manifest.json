@@ -9,7 +9,22 @@
       "minVersion": "23.0.0"
     }
   ],
-  "manifestVersion": 4,
+  "manifestVersion": 5,
+  "requiredPermissions": {
+    "clipboard": "readAndWrite",
+    "localFileSystem": "fullAccess",
+    "launchProcess": {
+      "schemes": ["http", "https"],
+      "extensions": [".svg", ".png"]
+    },
+    "webview": {
+      "allow": "yes",
+      "domains": ["https://*.adobe.com", "https://*.google.com"]
+    },
+    "network": {
+      "domains": "all"
+    }
+  },
   "entrypoints": [
     {
       "type": "panel",

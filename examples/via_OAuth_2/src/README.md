@@ -1,27 +1,27 @@
-# OAuthAPI — пример (Vectorscope)
+# via_OAuth_2 — OAuth + RSA license keys
 
-UXP-пример авторизации в стиле `retouch4me_photoshop_panel`.
-
-Отличие: вместо `getRetouchToken()` используется `getLicenceKey()` → `getOnlineRegistrationKey()`.
+Минимальный UXP-пример авторизации в стиле Vectorscope: OAuth PKCE + получение лицензионного ключа + RSA-верификация.
 
 ## Файлы
 
 | Файл | Назначение |
 |------|------------|
-| `auth.js` | OAuth flow + UI wiring |
-| `UserStore.js` | Состояние пользователя |
-| `appInfo.js` | deviceId + installationId (`R4VS-…`) |
-| `index.html` | Разметка demo-панели |
-
-## Подключение в UXP-панель
-
-```html
-<script type="module" src="./auth.js"></script>
-```
+| `auth.ts` | OAuth flow, polling, получение и проверка ключа |
+| `rsa.ts` | RSA-256 верификация лицензии (публичный ключ) |
+| `UserStore.ts` | Состояние пользователя в localStorage |
+| `appInfo.ts` | deviceId, installationId (`R4VS-…`), publicKey |
+| `generateDeviceId.ts` | Стабильный deviceId по fingerprint машины |
+| `index.ts` | UI wiring |
 
 ## Flow
 
-1. `onAuth()` — PKCE + `oauth.getLink()` + `shell.openExternal()`
+1. `onAuth()` — PKCE + `getAuthLink()` + `shell.openExternal()`
 2. `getToken()` — polling каждые 3s (404 = ждём)
 3. `getProfile()` — `UserStore.login()`
 4. `getLicenceKey()` — HMAC-сессия + `getOnlineRegistrationKey()`
+5. `verifyLicenseKey()` — проверка ключа публичным RSA-ключом
+
+## Важно
+
+- `client_id` / `programName`: `retouch4me_vectorscope_panel` (как в vectorscope, не `retouch4me_photoshop_panel` из npm по умолчанию)
+- Ссылка авторизации строится через `getAuthLink()`, т.к. npm-пакет использует другой client_id

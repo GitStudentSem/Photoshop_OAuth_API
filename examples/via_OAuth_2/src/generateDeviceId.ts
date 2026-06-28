@@ -1,20 +1,8 @@
 import os from 'os';
 import { storage } from 'uxp';
-
+import { ClientError } from './ClientError';
 
 const forge = require('node-forge');
-
-class ClientError extends Error {
-    fileName: string;
-    methodName: string;
-
-    constructor(message:string, fileName:string, methodName:string) {
-    super(message);
-    this.fileName = fileName;
-    this.methodName = methodName;
-  }
-
-}
 
 const FILE_NAME = 'generateDeviceId';
 
@@ -81,12 +69,12 @@ const getCPUModel = (useLogs:boolean) => {
 };
 
 const getMemory = (useLogs:boolean) => {
-  let memory = 'unknown';
+  let memory: string | number = 'unknown';
 
   try {
     const memoryInGB = Math.round(os.totalmem() / 1024 ** 3);
 
-    memory = memoryInGB.toString();
+    memory = memoryInGB;
     return memory;
   } catch (e) {
     useLogs && console.warn('getMemory:', e);
@@ -96,7 +84,7 @@ const getMemory = (useLogs:boolean) => {
 
 async function getTimeStamp(userName:string, useLogs:boolean) {
   const fs = storage.localFileSystem;
-  const platform = os.platform();
+  const platform = os.platform() as string;
   const methodName = 'getTimeStamp';
 
   let baseUrl = '';

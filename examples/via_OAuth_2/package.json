@@ -8,7 +8,7 @@
     "prebuild": "npm run build --prefix ../..",
     "build": "webpack",
     "predev": "npm run build --prefix ../..",
-    "dev": "webpack --watch --mode development"
+    "dev": "webpack --watch"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
