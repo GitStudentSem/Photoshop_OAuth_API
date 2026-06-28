@@ -31,7 +31,7 @@ export const oauth = new OAuthAPI((type, error, isShowLog) =>
   console.error(error, isShowLog),
 );
 
-const FILE_NAME = 'auth';
+const FILE_NAME = 'index';
 
 let pullingTimer:NodeJS.Timeout | undefined;
 
