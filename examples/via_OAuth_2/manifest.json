@@ -1,6 +1,6 @@
 {
-  "id": "typescript.webpack.sample",
-  "name": "TypeScript Webpack Sample",
+  "id": "Login via OAuth keys",
+  "name": "Login via OAuth keys",
   "version": "1.0.0",
   "main": "index.html",
   "host": [
@@ -32,7 +32,7 @@
       },
      
       "label": {
-        "default": "TypeScript Webpack Sample"
+        "default": "Login via OAuth keys"
       }
     }
   ],

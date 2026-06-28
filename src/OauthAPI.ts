@@ -49,6 +49,11 @@ const pages = {
 export default class OauthAPI {
   /**
    * Links to access all authorization methods.
+   * for stage retouch4.me change to stage7.reludo.yatsyk.com
+   * Other stage addresses:
+   * https://3dcom7.reludo.yatsyk.com/lutgetretouchtoken.php
+   * https://stage7.reludo.yatsyk.com/buy.php
+   * https://3dlutcreator.com/lutgetretouchtoken.php
    *
    */
 
@@ -79,6 +84,13 @@ export default class OauthAPI {
   /** filename for logger function */
   fileName: "OAuthAPI";
 
+  /**
+   * Creates a new OauthAPI instance with default production endpoints.
+   *
+   * @param errorHandler - Callback used to log and handle API errors.
+   * @remarks The constructor initializes all endpoint URLs and stores them as mutable instance state.
+   * Use `setBaseUrl` or `setFullUrl` to override defaults for staging or custom environments.
+   */
   constructor(
     /** The error logging function. */
     errorHandler: ErrorHandlerType,
@@ -88,12 +100,20 @@ export default class OauthAPI {
     this.redirectLink = `https://retouch4.me${pages.redirect}`;
     this.tokenByCodeVerifierLink = `https://retouch4.me${pages.tokenByCodeVerifier}`;
     this.getProfileLink = `https://retouch4.me${pages.profile}`;
-    this.getRetouchTokenLink = `https://retoucher.hz.labs.retouch4.me"${pages.lutgetretouchtoken}`;
+    this.getRetouchTokenLink = `https://retoucher.hz.labs.retouch4.me${pages.lutgetretouchtoken}`;
     this.getRetouchTokenWithoutEmailLink = `https://retouch4.me${pages.retouch}`;
     this.loginViaEmailPasswordLink = `https://retouch4.me${pages.loginViaEmailPassword}`;
     this.fileName = "OAuthAPI";
   }
 
+  /**
+   * Builds a standardized error response object and sends it to the configured error handler.
+   *
+   * @param data - Error payload with message and optional HTTP status.
+   * @param methodName - Source method name used for error attribution.
+   * @returns A normalized failed result in the `{ failed: true, data: ErrorType }` format.
+   * @remarks This helper does not throw and is used by public API methods to return predictable error objects.
+   */
   _generateError(
     data: { message: string; status?: number },
     methodName: string,
@@ -112,6 +132,14 @@ export default class OauthAPI {
     };
   }
 
+  /**
+   * Converts an unknown caught exception into a normalized API error result.
+   *
+   * @param error - Caught exception or arbitrary value from a `catch` block.
+   * @param methodName - Source method name used for error attribution.
+   * @returns A normalized failed result in the `{ failed: true, data: ErrorType }` format.
+   * @remarks This helper does not rethrow and always returns a structured error object.
+   */
   _catchError(
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
     error: Error | any,
@@ -137,6 +165,13 @@ export default class OauthAPI {
     };
   }
 
+  /**
+   * Replaces all OAuth-related endpoint URLs with explicitly provided full links.
+   *
+   * @param links - Complete set of endpoint URLs used by all authorization methods.
+   * @returns `void`.
+   * @remarks This method mutates instance URL state and affects all subsequent API calls made by this instance.
+   */
   setFullUrl(links: OauthLinksType) {
     this.authorizeLink = links.authorizeLink;
     this.redirectLink = links.redirectLink;
@@ -148,6 +183,16 @@ export default class OauthAPI {
     this.loginViaEmailPasswordLink = links.loginViaEmailPasswordLink;
   }
 
+  /**
+   * Rebuilds endpoint URLs from base domains for Retouch4me and LUT Creator services.
+   *
+   * @param baseUrls - Base URLs used to compose all known endpoint paths.
+   * @param baseUrls.lutCreatorBaseUrl - Base URL for LUT Creator-related endpoints.
+   * @param baseUrls.retouch4meBaseUrl - Base URL for Retouch4me OAuth endpoints.
+   * @param baseUrls.loginViaEmailPasswordLink - Base URL for login via email and password endpoint.
+   * @returns `void`.
+   * @remarks This method mutates instance URL state and affects all subsequent API calls made by this instance.
+   */
   setBaseUrl(baseUrls: {
     lutCreatorBaseUrl: string;
     retouch4meBaseUrl: string;
@@ -168,6 +213,13 @@ export default class OauthAPI {
    * @param  deviceid - Hardware identifier, must be tied to the computer.
    * @param  codeVerifier - Calculated value,
    * @param  codeChallenge - Computed value,
+   * @returns Authorization URL that should be opened by a user to start OAuth flow.
+   * @example
+   * ```ts
+   * const oauth = new OauthAPI(console.error as any);
+   * const link = oauth.getLink("device-id", "verifier", "challenge");
+   * ```
+   * @remarks This method only generates a URL and does not perform network requests.
    * @see https://docs.google.com/document/d1gX_YwTV0v1hI2-shIlj_Fdk23P9S1Dz8B3wZvjLlIBw/edit.
    */
   getLink(
@@ -186,8 +238,18 @@ export default class OauthAPI {
   }
 
   /**
-   * Obtaining an access token
-   * @param codeVerifier - Calculated value
+   * Obtains OAuth access token data by `code_verifier`.
+   *
+   * @param codeVerifier - PKCE code verifier that was used for authorization link generation.
+   * @returns A promise resolving to a successful token payload or a normalized error object.
+   * @example
+   * ```ts
+   * const result = await oauth.getToken(codeVerifier);
+   * if (!result.failed) {
+   *   console.log(result.data.access_token);
+   * }
+   * ```
+   * @remarks This method does not throw network/API errors; it returns `{ failed: true, data: ErrorType }`.
    * @see https://docs.google.com/document/d/1gX_YwTV0v1hI2-shIlj_Fdk23P9S1Dz8B3wZvjLlIBw/edit#heading=h.2vd8zkzi6cd9
    */
   async getToken(codeVerifier: string): GetTokenReturnType {
@@ -212,9 +274,22 @@ export default class OauthAPI {
   }
 
   /**
-   * Get user data
-   * @param  tokenType - The token type obtained from getToken().
-   * @param  token - The access token obtained from getToken().
+   * Fetches user profile data using an OAuth token.
+   *
+   * @param tokenType - Token type returned by `getToken` (for example `Bearer`).
+   * @param token - Access token returned by `getToken`.
+   * @returns A promise resolving to profile data or a normalized error object.
+   * @example
+   * ```ts
+   * const tokenResult = await oauth.getToken(codeVerifier);
+   * if (!tokenResult.failed) {
+   *   const profileResult = await oauth.getProfile(
+   *     tokenResult.data.token_type,
+   *     tokenResult.data.access_token,
+   *   );
+   * }
+   * ```
+   * @remarks This method does not throw network/API errors; it returns `{ failed: true, data: ErrorType }`.
    */
   async getProfile(tokenType: string, token: string): GetProfileReturnType {
     const methodName = "getProfile";
@@ -238,11 +313,23 @@ export default class OauthAPI {
   }
 
   /**
-   * Receiving a token for retouching
-   * @param  email - User email obtained from getProfile().
-   * @param  session - access_token obtained from getToken
-   * @param  deviceid - Hardware identifier, must be tied to the computer.
-   * @param  application - Application name for examle - retouch4me_photoshop_panel.
+   * Requests a retouch token using user profile, session, and device metadata.
+   *
+   * @param email - User email obtained from `getProfile`.
+   * @param session - `access_token` value obtained from `getToken`.
+   * @param deviceid - Hardware identifier tied to the client computer.
+   * @param application - Client application identifier (for example `retouch4me_photoshop_panel`).
+   * @returns A promise resolving to retouch token data or a normalized error object.
+   * @example
+   * ```ts
+   * const result = await oauth.getRetouchToken(
+   *   "user@example.com",
+   *   accessToken,
+   *   "device-id",
+   *   "retouch4me_photoshop_panel",
+   * );
+   * ```
+   * @remarks This method does not throw network/API errors; it returns `{ failed: true, data: ErrorType }`.
    */
   async getRetouchToken(
     email: string,
@@ -259,7 +346,6 @@ export default class OauthAPI {
       body.append("session", session);
       body.append("modes[]", "professional");
 
-      console.log(methodName, this.getRetouchTokenLink);
       const response = await fetch(this.getRetouchTokenLink, {
         method: "POST",
         mode: "cors",
@@ -280,11 +366,21 @@ export default class OauthAPI {
         methodName,
       );
     } catch (error) {
-      console.error(error);
       return this._catchError(error, methodName);
     }
   }
 
+  /**
+   * Authenticates a user with email and password.
+   *
+   * @param params - Login credentials and client metadata.
+   * @param params.email - User email address.
+   * @param params.password - User password.
+   * @param params.deviceid - Hardware identifier tied to the client computer.
+   * @param params.application - Client application identifier.
+   * @returns A promise resolving to session data or a normalized error object.
+   * @remarks This method does not throw network/API errors; it returns `{ failed: true, data: ErrorType }`.
+   */
   async loginViaEmailPassword({
     email,
     password,
@@ -307,7 +403,6 @@ export default class OauthAPI {
       formdata.append("password", password);
       formdata.append("deviceid", deviceid);
 
-      console.log(methodName, this.loginViaEmailPasswordLink);
       const response = await fetch(this.loginViaEmailPasswordLink, {
         method: "POST",
         body: formdata,
@@ -340,7 +435,6 @@ export default class OauthAPI {
            * **/
           retouching: number;
         } = await response.json();
-        console.log(methodName, "result", result);
         return { failed: false, data: result };
       }
 
@@ -354,12 +448,129 @@ export default class OauthAPI {
   }
 
   /**
-   * Obtaining an access token without using the user's email
-   * P.S. I didn't use this method, it wasn't ready yet
-   * @param {string} session - the access_token obtained from getToken.
+   * Retrieves an online registration key (or key status) for the current user/device pair.
+   *
+   * @param params - Input parameters used to construct the registration request.
+   * @param params.email - User email.
+   * @param params.programName - Application identifier used by backend APIs.
+   * @param params.deviceId - Device identifier tied to the client machine.
+   * @param params.installationId - Application installation identifier.
+   * @param params.platform - Platform identifier (for example `win32`, `win10`, `darwin`).
+   * @param params.session - Session/access token used by backend validation.
+   * @param params.withkey - Whether to request key confirmation mode (`confirm=1`).
+   * @param params.subscription - Whether to request subscription mode (`momentary=1`).
+   * @param params.onLogout - Callback executed when request handling fails.
+   * @returns A parsed object with backend error code/message and key usage fields.
+   * @throws Error When HTTP response is not successful, response is empty/invalid, session is invalid,
+   * or no keys are available.
+   * @remarks
+   * - `platform` is normalized internally (`win32`/`win10` -> `win`, `darwin` -> `mac`).
+   * - On any failure path, `onLogout()` is called and the error is rethrown.
+   */
+  async getOnlineRegistrationKey({
+    email,
+    programName,
+    deviceId,
+    installationId,
+    platform,
+    session,
+    withkey = false,
+    subscription = false,
+    onLogout = () => {},
+  }: {
+    email: string;
+    programName: string;
+    deviceId: string;
+    installationId: string;
+    platform: string;
+    session: string;
+    withkey?: boolean;
+    subscription?: boolean;
+    onLogout?: () => void;
+  }) {
+    // Определяем ОС через UXP
+    if (platform === "win32") platform = "win";
+    if (platform === "win10") platform = "win";
+    else if (platform === "darwin") platform = "mac";
+
+    // let url = 'https://retouch4.me/products/cloud-retouch/304';
+    let url = "https://3dlutcreator.com/getsubscriptionkey.php";
+    const queryParams = [
+      `email=${encodeURIComponent(email)}`,
+      `application=${encodeURIComponent(programName)}`,
+      `deviceid=${encodeURIComponent(deviceId)}`,
+      `installationid=${encodeURIComponent(installationId)}`,
+      `session=${encodeURIComponent(session)}`,
+    ];
+
+    if (platform) queryParams.push(`os=${platform}`);
+    if (withkey) queryParams.push("confirm=1");
+    if (subscription) queryParams.push("momentary=1");
+
+    url += "?" + queryParams.join("&");
+
+    try {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP status: ${response.status} message: ${response.statusText}`,
+        );
+      }
+
+      const text = await response.text();
+
+      if (!text.trim()) {
+        throw new Error("Server response is empty");
+      }
+
+      // Пытаемся распарсить JSON
+      let json;
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error("JSON payload is missing in server response");
+        }
+        json = JSON.parse(jsonMatch[0]);
+      } catch (e) {
+        throw new Error("Failed to parse server response");
+      }
+
+      const result = {
+        error: json.error,
+        errorMsg: json.errormsg || "",
+        key: json.key || "",
+        keysleft: json.keysleft || 0,
+        keylimit: json.keylimit || 0,
+        keycount: json.keyscount || 0,
+      };
+
+      if (result.error === "WEBAPIERROR_SESSION_INVALID") {
+        throw new Error("Session is invalid");
+      }
+      const noKeysLeft = result.keysleft === 0 && !result.key;
+      const keysLmit = result.keylimit === result.keycount && !result.key;
+      if (noKeysLeft || keysLmit) {
+        throw new Error("No keys left");
+      }
+      return result;
+    } catch (error) {
+      onLogout();
+      throw error;
+    }
+  }
+
+  /**
+   * Obtains an access token without explicitly passing the user's email.
+   *
+   * @param session - Access token obtained from `getToken`.
+   * @returns A promise resolving to backend response data or a normalized error object.
+   * @remarks
+   * - This endpoint path is considered less stable/experimental in current project usage.
+   * - This method does not throw network/API errors; it returns `{ failed: true, data: ErrorType }`.
    */
   async getRetouchTokenWithoutEmail(session: string) {
-    const methodName = "getRetouchTokenWithEmail";
+    const methodName = "getRetouchTokenWithoutEmail";
     try {
       const response = await fetch(this.getRetouchTokenWithoutEmailLink, {
         headers: { Authorization: session },
