@@ -102,7 +102,7 @@ export default class OauthAPI {
     this.getProfileLink = `https://retouch4.me${pages.profile}`;
     this.getRetouchTokenLink = `https://retoucher.hz.labs.retouch4.me${pages.lutgetretouchtoken}`;
     this.getRetouchTokenWithoutEmailLink = `https://retouch4.me${pages.retouch}`;
-    this.loginViaEmailPasswordLink = `https://retouch4.me${pages.loginViaEmailPassword}`;
+    this.loginViaEmailPasswordLink = `https://retoucher.hz.labs.retouch4.me${pages.loginViaEmailPassword}`;
     this.fileName = "OAuthAPI";
   }
 

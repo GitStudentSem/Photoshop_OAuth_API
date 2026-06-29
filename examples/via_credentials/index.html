@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="dist/index.js"></script>
+</head>
+<style>
+    body {
+        color: white;
+        padding: 0 16px;
+    }
+    .button {width: 100%;}
+    .field {width: 100%; margin-bottom: 8px;}
+    .user-info {
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+</style>
+<body>
+    <sp-textfield class="field" id="email" type="text" placeholder="Email" value="s.purnemcev@retouch4.me"></sp-textfield>
+    <sp-textfield class="field" id="password" type="password" placeholder="Password" value="Semaru120399"></sp-textfield>
+    <sp-button class="button" id="login">Login</sp-button>
+
+    <div class="user-info" id="userEmail"></div>
+    <div class="user-info" id="userName"></div>
+    <div class="user-info" id="remainingRetouch"></div>
+
+    <sp-button class="button" id="logout">Logout</sp-button>
+</body>
+</html>
