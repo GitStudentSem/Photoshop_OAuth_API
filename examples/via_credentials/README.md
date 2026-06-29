@@ -9,6 +9,7 @@
 3. При успешном ответе сохраняется `authSession` и данные пользователя в `UserStore`.
 4. Запрашивается retouch-токен (`getRetouchToken`) с HMAC-сессией на основе `authSession`.
 5. В панели отображаются email, имя и остаток ретушей. Кнопка **Logout** сбрасывает сессию.
+6. Выпадающий список **Server** переключает production-окружение (см. раздел «Выбор сервера»).
 
 ## Подключение библиотеки
 
@@ -24,11 +25,31 @@
 import OauthAPI from "@relu-ps/oauth-api";
 ```
 
-URL эндпоинтов по умолчанию заданы в библиотеке. Для своих серверов используйте методы настройки ссылок в `OauthAPI`.
+URL эндпоинтов по умолчанию заданы в библиотеке. В этом примере они переопределяются через общий модуль `examples/shared/oauthStaticServers.ts`.
+
+## Выбор сервера
+
+Логика серверов вынесена в `examples/shared/` и подключается относительным импортом:
+
+```ts
+import { initServerSelect } from "../../shared/oauthStaticServers";
+```
+
+При сборке webpack встраивает этот файл в `dist/index.js` — отдельный скрипт в manifest не нужен.
+
+**Нюансы:**
+
+- Репозиторий нужно копировать целиком: путь `../../shared/` валиден только при структуре `examples/via_credentials/` + `examples/shared/`.
+- Если выносите один пример отдельно — скопируйте `examples/shared/` рядом или перенесите `oauthStaticServers.ts` в `src/` примера.
+- Выбор сервера хранится в `localStorage` (`selectedServerId`) и общий для всех `via_*` примеров.
+- При смене сервера активная сессия сбрасывается — токены привязаны к конкретному окружению.
 
 ## Структура
 
 ```
+examples/
+  shared/
+    oauthStaticServers.ts   # список серверов, applyOAuthLinks, initServerSelect
 via_credentials/
   manifest.json     # манифест UXP-плагина
   index.html        # UI панели (Spectrum Web Components)

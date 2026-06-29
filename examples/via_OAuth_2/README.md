@@ -1,6 +1,6 @@
-# via_OAuth — пример UXP-плагина
+# via_OAuth_2 — пример UXP-плагина
 
-Минимальный Photoshop-плагин (UXP + TypeScript + Webpack), демонстрирующий полный OAuth-flow через `@relu-ps/oauth-api`: авторизация в браузере, polling токена, загрузка профиля и получение retouch-токена.
+Минимальный Photoshop-плагин (UXP + TypeScript + Webpack), демонстрирующий OAuth-flow с проверкой RSA-лицензии через `@relu-ps/oauth-api`: авторизация в браузере, polling токена, загрузка профиля и получение license key.
 
 ## Что делает пример
 
@@ -8,7 +8,8 @@
 2. Ссылка открывается во внешнем браузере через `shell.openExternal`.
 3. Плагин опрашивает `getToken` каждые 3 секунды (до 20 попыток), пока пользователь не завершит вход.
 4. После получения токена загружается профиль (`getProfile`) и retouch-токен (`getRetouchToken`).
-5. В панели отображаются email, имя и остаток ретушей. Кнопка **Logout** сбрасывает сессию.
+5. В панели отображаются email, имя и статус license key. Кнопка **Logout** сбрасывает сессию.
+6. Выпадающий список **Server** переключает production-окружение (см. раздел «Выбор сервера»).
 
 ## Подключение библиотеки
 
@@ -24,23 +25,43 @@
 import OauthAPI from "@relu-ps/oauth-api";
 ```
 
+URL эндпоинтов переопределяются через `examples/shared/oauthStaticServers.ts`.
+
+## Выбор сервера
+
+```ts
+import { initServerSelect } from "../../shared/oauthStaticServers";
+
+// До validateSavedSession() и любых запросов:
+initServerSelect(oauth, () => {
+  if (UserStore.isAuth) UserStore.logout();
+});
+```
+
+**Нюансы:** те же, что в `via_OAuth` — нужна папка `examples/shared/`, общий `selectedServerId` в localStorage, сброс сессии при смене сервера. Подробнее: `examples/shared/README.md`.
+
 ## Структура
 
 ```
-via_OAuth/
-  manifest.json     # манифест UXP-плагина
-  index.html        # UI панели (Spectrum Web Components)
+examples/
+  shared/
+    oauthStaticServers.ts
+via_OAuth_2/
+  manifest.json
+  index.html
   src/
-    index.ts        # OAuth-flow, polling, обработчики кнопок
-    UserStore.ts    # хранение сессии в localStorage
+    index.ts        # UI, initServerSelect, validateSavedSession
+    auth.ts         # OAuth-flow, oauth instance
+    UserStore.ts
+    rsa.ts          # проверка license key
   dist/
-    index.js        # бандл webpack (создаётся при сборке)
+    index.js
 ```
 
 ## Сборка
 
 ```bash
-cd examples/via_OAuth
+cd examples/via_OAuth_2
 npm install
 npm run build
 ```
@@ -63,14 +84,14 @@ npm run dev
 
 ## OAuth-flow в коде
 
-Основная логика — в `src/index.ts`:
+Основная логика — в `src/auth.ts` и `src/index.ts`:
 
 - `onAuth()` — старт авторизации (генерация PKCE, открытие браузера).
 - `getToken()` — polling `oauth.getToken()` до успеха или таймаута.
 - `getProfile()` — сохранение пользователя в `UserStore`.
-- `getRetouchToken()` — запрос retouch-токена с HMAC-сессией.
+- `validateSavedSession()` — проверка RSA license key при старте.
 
-`UserStore` (`src/UserStore.ts`) хранит `isAuth`, email, имя и остаток ретушей в `localStorage`.
+`UserStore` (`src/UserStore.ts`) хранит `isAuth`, email, имя и license key в `localStorage`.
 
 ## Зависимости
 

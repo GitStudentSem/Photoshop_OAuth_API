@@ -1,6 +1,7 @@
 import UserStore from './UserStore';
-import { onAuth, validateSavedSession } from './auth';
+import { onAuth, oauth, validateSavedSession } from './auth';
 import { ClientError } from './ClientError';
+import { initServerSelect } from '../../shared/oauthStaticServers';
 
 const FILE_NAME = 'index';
 
@@ -71,6 +72,13 @@ async function init() {
     setUserInfo('');
   }
 }
+
+initServerSelect(oauth, () => {
+  if (UserStore.isAuth) {
+    UserStore.logout();
+    setUserInfo('Logged out');
+  }
+});
 
 document.getElementById('authorize')?.addEventListener('click', onAuthorizeClick);
 document.getElementById('logout')?.addEventListener('click', () => {

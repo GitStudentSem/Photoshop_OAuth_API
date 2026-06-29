@@ -1,6 +1,7 @@
 import CryptoJS from "crypto-js";
 import { shell } from "uxp";
 import OauthAPI from "@relu-ps/oauth-api";
+import { initServerSelect } from "../../shared/oauthStaticServers";
 import UserStore from "./UserStore";
 
 
@@ -228,6 +229,13 @@ async function onAuthorizeClick(): Promise<void> {
     setUserInfo(); // на случай logout внутри flow
   }
 }
+
+initServerSelect(oauth, () => {
+  if (UserStore.isAuth) {
+    UserStore.logout();
+    setUserInfo();
+  }
+});
 
 setUserInfo();
 document.getElementById("authorize")?.addEventListener("click", onAuthorizeClick);

@@ -1,6 +1,6 @@
 import CryptoJS from "crypto-js";
 import OauthAPI from "@relu-ps/oauth-api";
-import { initServerSelect } from "./oauthStaticServers";
+import { initServerSelect } from "../../shared/oauthStaticServers";
 import UserStore from "./UserStore";
 
 const catchError = (

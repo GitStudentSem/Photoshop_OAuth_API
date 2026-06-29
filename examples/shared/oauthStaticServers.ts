@@ -1,7 +1,5 @@
-import type OauthAPI from "@relu-ps/oauth-api";
-
 /**
- * OAuth static servers — server selection and URL mapping for credentials example.
+ * OAuth static servers — shared server list and URL mapping for via_* examples.
  *
  * Mirrors ServerStore.ts + OauthAPI.setBaseUrl() from photoshop-panel.
  * Use buildOAuthLinks() → oauth.setFullUrl(links) when user picks a server.
@@ -34,7 +32,9 @@ export type StaticServerConfig = {
   retouch4meBaseUrl: string;
 };
 
-export type OAuthClient = Pick<OauthAPI, "setFullUrl">;
+export type OAuthClient = {
+  setFullUrl(links: OAuthLinks): void;
+};
 
 export const SELECTED_SERVER_ID_KEY = "selectedServerId";
 

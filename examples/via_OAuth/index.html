@@ -8,7 +8,10 @@
         color: white;
         padding: 0 16px;
     }
-.button {width: 100%;}
+    .button {width: 100%;}
+    .server-row {margin-bottom: 8px;}
+    .server-row label {display: block; margin-bottom: 4px;}
+    .server-row select {width: 100%;}
 
     .user-info {
         padding-top: 5px;
@@ -16,6 +19,10 @@
     }
 </style>
 <body>
+    <div class="server-row">
+        <label for="server">Server</label>
+        <select id="server"></select>
+    </div>
     <sp-button class="button" id="authorize">Authorize</sp-button>
  
  

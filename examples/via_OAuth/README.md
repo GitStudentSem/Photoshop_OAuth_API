@@ -9,6 +9,7 @@
 3. Плагин опрашивает `getToken` каждые 3 секунды (до 20 попыток), пока пользователь не завершит вход.
 4. После получения токена загружается профиль (`getProfile`) и retouch-токен (`getRetouchToken`).
 5. В панели отображаются email, имя и остаток ретушей. Кнопка **Logout** сбрасывает сессию.
+6. Выпадающий список **Server** переключает production-окружение (см. раздел «Выбор сервера»).
 
 ## Подключение библиотеки
 
@@ -24,9 +25,35 @@
 import OauthAPI from "@relu-ps/oauth-api";
 ```
 
+URL эндпоинтов переопределяются через `examples/shared/oauthStaticServers.ts` (см. ниже).
+
+## Выбор сервера
+
+Общий модуль для всех `via_*` примеров:
+
+```ts
+import { initServerSelect } from "../../shared/oauthStaticServers";
+
+initServerSelect(oauth, () => {
+  if (UserStore.isAuth) UserStore.logout();
+});
+```
+
+Вызывайте `initServerSelect` **до** любых API-запросов при старте панели.
+
+**Нюансы:**
+
+- Нужна структура `examples/via_OAuth/` + `examples/shared/` в одном репозитории.
+- При выносе примера отдельно — скопируйте `examples/shared/` или файл `oauthStaticServers.ts` в `src/`.
+- `selectedServerId` в `localStorage` общий между примерами.
+- Смена сервера сбрасывает сессию.
+
 ## Структура
 
 ```
+examples/
+  shared/
+    oauthStaticServers.ts
 via_OAuth/
   manifest.json     # манифест UXP-плагина
   index.html        # UI панели (Spectrum Web Components)
