@@ -10,12 +10,19 @@
     }
     .button {width: 100%;}
     .field {width: 100%; margin-bottom: 8px;}
+    .server-row {margin-bottom: 8px;}
+    .server-row label {display: block; margin-bottom: 4px;}
+    .server-row select {width: 100%;}
     .user-info {
         padding-top: 5px;
         padding-bottom: 5px;
     }
 </style>
 <body>
+    <div class="server-row">
+        <label for="server">Server</label>
+        <select id="server"></select>
+    </div>
     <sp-textfield class="field" id="email" type="text" placeholder="Email" value="s.purnemcev@retouch4.me"></sp-textfield>
     <sp-textfield class="field" id="password" type="password" placeholder="Password" value="Semaru120399"></sp-textfield>
     <sp-button class="button" id="login">Login</sp-button>

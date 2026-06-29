@@ -1,5 +1,6 @@
 import CryptoJS from "crypto-js";
 import OauthAPI from "@relu-ps/oauth-api";
+import { initServerSelect } from "./oauthStaticServers";
 import UserStore from "./UserStore";
 
 const catchError = (
@@ -130,16 +131,13 @@ export const loginViaEmailPassword = async (
   email: string,
   password: string,
 ): Promise<void> => {
-  console.log(1)
   const deviceid = ensureDeviceId();
-  console.log(2)
   const result = await oauth.loginViaEmailPassword({
     email,
     password,
     deviceid,
     application: APPLICATION,
   });
-  console.log(3)
   if (result.failed === false) {
     if (!result.data.loggedin) {
       throw new Error("Login via email password failed");
@@ -154,7 +152,7 @@ export const loginViaEmailPassword = async (
     await getRetouchToken();
     return;
   }
-  console.log(4)
+
   console.error({
     userMessage: "Login via email password failed",
     error: result.data,
@@ -211,6 +209,12 @@ async function onLoginClick(): Promise<void> {
   }
 }
 
+initServerSelect(oauth, () => {
+  if (UserStore.isAuth) {
+    UserStore.logout();
+    setUserInfo();
+  }
+});
 setUserInfo();
 document.getElementById("login")?.addEventListener("click", onLoginClick);
 document.getElementById("logout")?.addEventListener("click", () => {
