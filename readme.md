@@ -38,42 +38,6 @@
 
 `installationId` не участвует в генерации RSA-пары: он используется только в `sign` / `verify`.
 
-## С чего начать
-
-Если вы впервые подключаете библиотеку, идите в таком порядке:
-
-1. Прочитайте этот README (базовый OAuth API и методы).
-2. Запустите один из примеров из `examples/` (ниже есть карта примеров).
-3. Для RSA-лицензирования отдельно пройдите `examples/rsa-keygen/README.md` и `examples/oauth-rsa-keys/src/README.md`.
-
-## Какой пример выбрать
-
-- `examples/oauth-browser` — классический OAuth PKCE через браузер.
-- `examples/email-password` — вход по email/паролю.
-- `examples/oauth-rsa-keys` — OAuth + проверка license key по RSA.
-- `examples/rsa-keygen` — генерация RSA-ключей и подпись лицензий (серверная часть).
-- `examples/shared` — общий модуль переключения серверов для примеров.
-
-## Сквозной flow (клиент + сервер)
-
-### OAuth без RSA
-
-1. Клиент генерирует `deviceId` и PKCE (`codeVerifier` / `codeChallenge`).
-2. Клиент открывает ссылку авторизации (`getLink` / `getAuthLink`) во внешнем браузере.
-3. Клиент polling-ом ждёт `getToken`.
-4. Клиент получает профиль (`getProfile`) и рабочий токен (`getRetouchToken`).
-
-### OAuth + RSA лицензии
-
-1. Один раз сгенерируйте RSA-пару (`examples/rsa-keygen`, команда `generate`).
-2. Публичный ключ встройте в клиент, приватный ключ храните только на сервере.
-3. Клиент формирует `installationId = <APP_PREFIX>-<deviceId>`.
-4. Клиент отправляет на сервер `email + installationId`.
-5. Сервер подписывает лицензию приватным ключом (`sign`) и возвращает `licenseKey`.
-6. Клиент проверяет подпись публичным ключом (`verifyLicenseKey`).
-
-`installationId` не участвует в генерации RSA-пары: он используется только в `sign` / `verify`.
-
 ## Установка
 
 Пакет публикуется во внутренний Nexus-репозиторий. Настройте `.npmrc` (см. [PUBLISHING.md](./PUBLISHING.md)) и установите зависимость:
@@ -109,7 +73,7 @@ try {
 }
 ```
 
-Полный рабочий пример с polling, хранением сессии и UI — в [`examples/oauth-browser`](./examples/oauth-browser).
+Полный рабочий пример с polling, хранением сессии и UI — в [`examples/oauth-browser/README.md`](./examples/oauth-browser/README.md).
 
 ## API
 
@@ -145,9 +109,10 @@ try {
 | `getToken(codeVerifier)` | Получение access token по code verifier |
 | `getProfile(tokenType, token)` | Профиль пользователя по OAuth-токену |
 | `getRetouchToken(email, session, deviceId, application)` | Retouch-токен и остаток ретушей |
+| `loginViaEmailPassword({ email, password, deviceid, application })` | Авторизация по email/паролю, возвращает `session` |
 | `getRetouchTokenWithoutEmail(session)` | Альтернативный способ получения токена без email |
 | `getOnlineRegistrationKey(params)` | Онлайн-ключ регистрации / подписки |
-| `setBaseUrl({ lutCreatorBaseUrl, retouch4meBaseUrl })` | Переключение на stage или другой хост |
+| `setBaseUrl({ lutCreatorBaseUrl, retouch4meBaseUrl, loginViaEmailPasswordLink })` | Переключение endpoint-ов на stage или другой хост |
 | `setFullUrl(links)` | Полная замена всех endpoint URL |
 
 ### Окружения
@@ -156,8 +121,9 @@ try {
 
 ```ts
 oauth.setBaseUrl({
-  retouch4meBaseUrl: "https://stage7.reludo.yatsyk.com",
-  lutCreatorBaseUrl: "https://3dcom7.reludo.yatsyk.com",
+  retouch4meBaseUrl: "https://retouch4.me",
+  lutCreatorBaseUrl: "https://retouch4.me",
+  loginViaEmailPasswordLink: "https://retoucher.hz.labs.retouch4.me",
 });
 ```
 

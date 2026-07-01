@@ -1,11 +1,17 @@
 import { OAuthAPIError } from "./OAuthAPIError";
 import type {
+  GetOnlineRegistrationKeyDataType,
+  GetOnlineRegistrationKeyParamsType,
+  GetOnlineRegistrationKeyReturnType,
   GetProfileDataType,
   GetProfileReturnType,
   GetRetouchTokenDataType,
   GetRetouchTokenReturnType,
+  GetRetouchTokenWithoutEmailDataType,
+  GetRetouchTokenWithoutEmailReturnType,
   GetTokenDataType,
   GetTokenReturnType,
+  LoginViaEmailPasswordParamsType,
   LoginViaEmailPasswordDataType,
   LoginViaEmailPasswordReturnType,
 } from "./OAuthTypes";
@@ -13,21 +19,26 @@ import type {
 export { OAuthAPIError } from "./OAuthAPIError";
 export type {
   ErrorType,
+  GetOnlineRegistrationKeyDataType,
+  GetOnlineRegistrationKeyParamsType,
+  GetOnlineRegistrationKeyReturnType,
   GetProfileDataType,
   GetProfileReturnType,
   GetRetouchTokenDataType,
   GetRetouchTokenReturnType,
+  GetRetouchTokenWithoutEmailDataType,
+  GetRetouchTokenWithoutEmailReturnType,
   GetTokenDataType,
   GetTokenReturnType,
+  LoginViaEmailPasswordParamsType,
   LoginViaEmailPasswordDataType,
   LoginViaEmailPasswordReturnType,
 } from "./OAuthTypes";
 
 /**
- * @module OauthAPI
- * @description A class representing methods for Oauth authorization with r4me servers
+ * Complete list of OAuth endpoint links used by {@link OauthAPI}.
  */
-interface OauthLinksType {
+export interface OauthLinksType {
   /** Authorization start link. */
   authorizeLink: string;
 
@@ -60,14 +71,15 @@ const pages = {
   loginViaEmailPassword: "/api/v1/auth/login",
 };
 
+/**
+ * OAuth API client for Retouch4me services.
+ *
+ * Provides methods to build OAuth links, exchange tokens, fetch user profile,
+ * authorize via email/password, and request registration keys.
+ */
 export default class OauthAPI {
   /**
    * Links to access all authorization methods.
-   * for stage retouch4.me change to stage7.reludo.yatsyk.com
-   * Other stage addresses:
-   * https://3dcom7.reludo.yatsyk.com/lutgetretouchtoken.php
-   * https://stage7.reludo.yatsyk.com/buy.php
-   * https://3dlutcreator.com/lutgetretouchtoken.php
    *
    */
 
@@ -151,8 +163,8 @@ export default class OauthAPI {
   }
 
   /**
-   * @method getLink
-   * @description Generating a link for authorization, the user will follow this link.
+   * Generates an OAuth authorization link for browser login flow.
+   *
    * @param  deviceid - Hardware identifier, must be tied to the computer.
    * @param  codeVerifier - Calculated value,
    * @param  codeChallenge - Computed value,
@@ -347,12 +359,7 @@ export default class OauthAPI {
     password,
     deviceid,
     application,
-  }: {
-    email: string;
-    password: string;
-    deviceid: string;
-    application: string;
-  }): LoginViaEmailPasswordReturnType {
+  }: LoginViaEmailPasswordParamsType): LoginViaEmailPasswordReturnType {
     const methodName = "loginViaEmailPassword";
     try {
       const formdata = new FormData();
@@ -421,17 +428,7 @@ export default class OauthAPI {
     withkey = false,
     subscription = false,
     onLogout = () => {},
-  }: {
-    email: string;
-    programName: string;
-    deviceId: string;
-    installationId: string;
-    platform: string;
-    session: string;
-    withkey?: boolean;
-    subscription?: boolean;
-    onLogout?: () => void;
-  }) {
+  }: GetOnlineRegistrationKeyParamsType): GetOnlineRegistrationKeyReturnType {
     const methodName = "getOnlineRegistrationKey";
 
     // Определяем ОС через UXP
@@ -499,7 +496,7 @@ export default class OauthAPI {
         });
       }
 
-      const result = {
+      const result: GetOnlineRegistrationKeyDataType = {
         error: json.error,
         errorMsg: json.errormsg || "",
         key: json.key || "",
@@ -547,7 +544,9 @@ export default class OauthAPI {
    * - This endpoint path is considered less stable/experimental in current project usage.
    * @throws {@link OAuthAPIError} On HTTP or network failures.
    */
-  async getRetouchTokenWithoutEmail(session: string) {
+  async getRetouchTokenWithoutEmail(
+    session: string,
+  ): GetRetouchTokenWithoutEmailReturnType {
     const methodName = "getRetouchTokenWithoutEmail";
     try {
       const response = await fetch(this.getRetouchTokenWithoutEmailLink, {
@@ -555,7 +554,8 @@ export default class OauthAPI {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result: GetRetouchTokenWithoutEmailDataType =
+          await response.json();
 
         return result;
       }

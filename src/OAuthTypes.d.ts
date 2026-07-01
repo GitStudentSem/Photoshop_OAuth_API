@@ -59,7 +59,7 @@ export type GetProfileReturnType = Promise<GetProfileDataType>;
  */
 export type GetRetouchTokenDataType = {
   /** Remaining operations by mode. */
-  remaining: { professional: number };
+  remaining: GetRetouchTokenRemainingByModeType;
   /** Backend status code for retouch token response. */
   status: number;
   /** Retouch token string used by downstream services. */
@@ -67,9 +67,30 @@ export type GetRetouchTokenDataType = {
 };
 
 /**
+ * Remaining operations grouped by mode.
+ */
+export type GetRetouchTokenRemainingByModeType = {
+  /** Remaining operations in `professional` mode. */
+  professional: number;
+};
+
+/**
  * Result of `getRetouchToken`.
  */
 export type GetRetouchTokenReturnType = Promise<GetRetouchTokenDataType>;
+
+/**
+ * Response payload shape for `getRetouchTokenWithoutEmail`.
+ *
+ * Backend response may evolve, so unknown fields are preserved.
+ */
+export type GetRetouchTokenWithoutEmailDataType = Record<string, unknown>;
+
+/**
+ * Result of `getRetouchTokenWithoutEmail`.
+ */
+export type GetRetouchTokenWithoutEmailReturnType =
+  Promise<GetRetouchTokenWithoutEmailDataType>;
 
 /**
  * Successful login-via-email-password response payload.
@@ -79,11 +100,15 @@ export type LoginViaEmailPasswordDataType = {
   result: number;
   /** User session string. */
   session: string;
+  /** Numeric gateway identifier returned by backend. */
   gateway: number;
   /** `1` when the user is authorized, `0` otherwise. */
   loggedin: boolean;
+  /** User email address. */
   mail: string;
+  /** User first name. */
   firstname: string;
+  /** User last name. */
   lastname: string;
   /** `true` when first or last name is missing. */
   askname: boolean;
@@ -96,3 +121,65 @@ export type LoginViaEmailPasswordDataType = {
  */
 export type LoginViaEmailPasswordReturnType =
   Promise<LoginViaEmailPasswordDataType>;
+
+/**
+ * Input payload for `loginViaEmailPassword`.
+ */
+export type LoginViaEmailPasswordParamsType = {
+  /** User email address. */
+  email: string;
+  /** User password. */
+  password: string;
+  /** Hardware identifier tied to the client computer. */
+  deviceid: string;
+  /** Client application identifier. */
+  application: string;
+};
+
+/**
+ * Input payload for `getOnlineRegistrationKey`.
+ */
+export type GetOnlineRegistrationKeyParamsType = {
+  /** User email. */
+  email: string;
+  /** Application identifier used by backend APIs. */
+  programName: string;
+  /** Device identifier tied to the client machine. */
+  deviceId: string;
+  /** Application installation identifier. */
+  installationId: string;
+  /** Platform identifier (for example `win32`, `win10`, `darwin`). */
+  platform: string;
+  /** Session/access token used by backend validation. */
+  session: string;
+  /** Whether to request key confirmation mode (`confirm=1`). */
+  withkey?: boolean;
+  /** Whether to request subscription mode (`momentary=1`). */
+  subscription?: boolean;
+  /** Callback executed when request handling fails. */
+  onLogout?: () => void;
+};
+
+/**
+ * Parsed online registration key response payload.
+ */
+export type GetOnlineRegistrationKeyDataType = {
+  /** Backend error code string. */
+  error: string;
+  /** Backend error message. */
+  errorMsg: string;
+  /** License key string when available. */
+  key: string;
+  /** Remaining keys count. */
+  keysleft: number;
+  /** Maximum keys limit. */
+  keylimit: number;
+  /** Already used keys count. */
+  keycount: number;
+};
+
+/**
+ * Result of `getOnlineRegistrationKey`.
+ */
+export type GetOnlineRegistrationKeyReturnType =
+  Promise<GetOnlineRegistrationKeyDataType>;
