@@ -1,11 +1,25 @@
 import UserStore from './UserStore';
 import { onAuth, oauth, validateSavedSession } from './auth';
+import { OAuthAPIError } from '@relu-ps/oauth-api';
 import { ClientError } from './ClientError';
 import { initServerSelect } from '../../shared/oauthStaticServers';
 
 const FILE_NAME = 'index';
 
 const catchError = (userMessage: string, error: unknown, methodName: string) => {
+  if (error instanceof OAuthAPIError) {
+    console.error({
+      userMessage,
+      error: {
+        message: error.message,
+        status: error.status,
+        methodName: error.methodName,
+        fileName: error.fileName,
+      },
+    });
+    return;
+  }
+
   const message = error instanceof Error ? error.message : String(error);
   console.error({
     userMessage,

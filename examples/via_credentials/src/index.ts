@@ -1,23 +1,40 @@
 import CryptoJS from "crypto-js";
-import OauthAPI from "@relu-ps/oauth-api";
+import OauthAPI, { OAuthAPIError } from "@relu-ps/oauth-api";
 import { initServerSelect } from "../../shared/oauthStaticServers";
 import UserStore from "./UserStore";
 
 const catchError = (
   userMessage: string,
-  // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-  error: Error | any,
+  error: unknown,
   methodName: string,
   fileName: string,
 ) => {
-  console.error({
-    userMessage,
-    error: {
-      message: error.message,
-      methodName: methodName,
-      fileName: fileName,
-    },
-  });
+  if (error instanceof OAuthAPIError) {
+    console.error({
+      userMessage,
+      error: {
+        message: error.message,
+        status: error.status,
+        methodName: error.methodName,
+        fileName: error.fileName,
+      },
+    });
+    return;
+  }
+
+  if (error instanceof Error) {
+    console.error({
+      userMessage,
+      error: {
+        message: error.message,
+        methodName,
+        fileName,
+      },
+    });
+    return;
+  }
+
+  console.error({ userMessage, error, methodName, fileName });
 };
 
 const checkInternetConnection = (actionName: string) => {
@@ -31,9 +48,7 @@ const checkInternetConnection = (actionName: string) => {
   return isOnline;
 };
 
-export const oauth: OauthAPI = new OauthAPI((type, error, isShowLog) =>
-  console.error(error, isShowLog),
-);
+export const oauth: OauthAPI = new OauthAPI();
 const FILE_NAME = "auth";
 
 const APPLICATION = "retouch4me_photoshop_panel";
@@ -103,28 +118,35 @@ export const getRetouchToken = async (): Promise<void> => {
     throw new Error("Session was not found. Please login again.");
   }
 
-  const tokenData = await oauth.getRetouchToken(
-    email,
-    generateRetouchSession(authSession),
-    localStorage.getItem("deviceid") || "",
-    APPLICATION,
-  );
+  try {
+    const tokenData = await oauth.getRetouchToken(
+      email,
+      generateRetouchSession(authSession),
+      localStorage.getItem("deviceid") || "",
+      APPLICATION,
+    );
 
-  if (tokenData.failed === false) {
-    UserStore.setRemainingRetouch(tokenData.data.remaining.professional);
-    localStorage.setItem("retouchToken", tokenData.data.token);
-    return;
+    UserStore.setRemainingRetouch(tokenData.remaining.professional);
+    localStorage.setItem("retouchToken", tokenData.token);
+  } catch (error) {
+    if (error instanceof OAuthAPIError && error.status === 401) {
+      UserStore.logout();
+    }
+
+    console.error({
+      userMessage: "Receiving retouch token failed",
+      error:
+        error instanceof OAuthAPIError
+          ? {
+              message: error.message,
+              status: error.status,
+              methodName: error.methodName,
+              fileName: error.fileName,
+            }
+          : error,
+    });
+    throw error;
   }
-
-  if (tokenData.data.status === 401) {
-    UserStore.logout();
-  }
-
-  console.error({
-    userMessage: "Receiving retouch token failed",
-    error: tokenData.data,
-  });
-  throw tokenData.data;
 };
 
 export const loginViaEmailPassword = async (
@@ -138,26 +160,15 @@ export const loginViaEmailPassword = async (
     deviceid,
     application: APPLICATION,
   });
-  if (result.failed === false) {
-    if (!result.data.loggedin) {
-      throw new Error("Login via email password failed");
-    }
 
-    setEmailPasswordAuth(result.data.session);
-    UserStore.login(
-      result.data.mail,
-      `${result.data.firstname} ${result.data.lastname}`,
-    );
-
-    await getRetouchToken();
-    return;
+  if (!result.loggedin) {
+    throw new Error("Login via email password failed");
   }
 
-  console.error({
-    userMessage: "Login via email password failed",
-    error: result.data,
-  });
-  throw result.data;
+  setEmailPasswordAuth(result.session);
+  UserStore.login(result.mail, `${result.firstname} ${result.lastname}`);
+
+  await getRetouchToken();
 };
 
 const setUserInfo = () => {

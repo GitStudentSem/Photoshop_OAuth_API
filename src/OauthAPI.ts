@@ -405,7 +405,7 @@ export default class OauthAPI {
    * @param params.subscription - Whether to request subscription mode (`momentary=1`).
    * @param params.onLogout - Callback executed when request handling fails.
    * @returns A parsed object with backend error code/message and key usage fields.
-   * @throws Error When HTTP response is not successful, response is empty/invalid, session is invalid,
+   * @throws {@link OAuthAPIError} When HTTP response is not successful, response is empty/invalid, session is invalid,
    * or no keys are available.
    * @remarks
    * - `platform` is normalized internally (`win32`/`win10` -> `win`, `darwin` -> `mac`).
@@ -432,6 +432,8 @@ export default class OauthAPI {
     subscription?: boolean;
     onLogout?: () => void;
   }) {
+    const methodName = "getOnlineRegistrationKey";
+
     // Определяем ОС через UXP
     if (platform === "win32") platform = "win";
     if (platform === "win10") platform = "win";
@@ -457,15 +459,21 @@ export default class OauthAPI {
       const response = await fetch(url);
 
       if (!response.ok) {
-        throw new Error(
-          `HTTP status: ${response.status} message: ${response.statusText}`,
-        );
+        throw new OAuthAPIError({
+          message: response.statusText,
+          status: response.status,
+          methodName,
+        });
       }
 
       const text = await response.text();
 
       if (!text.trim()) {
-        throw new Error("Server response is empty");
+        throw new OAuthAPIError({
+          message: "Server response is empty",
+          status: 0,
+          methodName,
+        });
       }
 
       // Пытаемся распарсить JSON
@@ -473,11 +481,22 @@ export default class OauthAPI {
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
-          throw new Error("JSON payload is missing in server response");
+          throw new OAuthAPIError({
+            message: "JSON payload is missing in server response",
+            status: 0,
+            methodName,
+          });
         }
         json = JSON.parse(jsonMatch[0]);
       } catch (e) {
-        throw new Error("Failed to parse server response");
+        if (e instanceof OAuthAPIError) {
+          throw e;
+        }
+        throw new OAuthAPIError({
+          message: "Failed to parse server response",
+          status: 0,
+          methodName,
+        });
       }
 
       const result = {
@@ -493,7 +512,7 @@ export default class OauthAPI {
         throw new OAuthAPIError({
           message: "Session is invalid",
           status: 0,
-          methodName: "getOnlineRegistrationKey",
+          methodName,
         });
       }
       const noKeysLeft = result.keysleft === 0 && !result.key;
@@ -502,7 +521,7 @@ export default class OauthAPI {
         throw new OAuthAPIError({
           message: "No keys left",
           status: 0,
-          methodName: "getOnlineRegistrationKey",
+          methodName,
         });
       }
       return result;
@@ -514,7 +533,7 @@ export default class OauthAPI {
       throw new OAuthAPIError({
         message: error instanceof Error ? error.message : "unknown catch error",
         status: 0,
-        methodName: "getOnlineRegistrationKey",
+        methodName,
       });
     }
   }

@@ -1,7 +1,7 @@
 import CryptoJS from 'crypto-js';
 import { shell } from 'uxp';
 import os from 'os';
-import OAuthAPI from '@relu-ps/oauth-api';
+import OAuthAPI, { OAuthAPIError } from '@relu-ps/oauth-api';
 import UserStore from './UserStore';
 import { appInfo, initAppInfo, publicKey } from './appInfo';
 import { ClientError } from './ClientError';
@@ -9,11 +9,7 @@ import { verifyLicenseKey } from './rsa';
 
 export const PROGRAM_NAME = 'retouch4me_vectorscope_panel';
 
-export const oauth = new OAuthAPI((type, error, isShowLog) => {
-  if (isShowLog) {
-    console.error(error);
-  }
-});
+export const oauth = new OAuthAPI();
 
 const FILE_NAME = 'auth';
 
@@ -79,35 +75,6 @@ const getToken = async (codeVerifier: string): Promise<void> => {
   const methodName = 'getToken';
 
   await new Promise<void>((resolve, reject) => {
-    let finished = false;
-
-    const finish = ({ ok, error }: { ok: boolean; error?: unknown }) => {
-      if (finished) return;
-      finished = true;
-
-      if (pullingTimer) {
-        clearInterval(pullingTimer);
-        pullingTimer = null;
-      }
-
-      if (ok) {
-        resolve();
-        return;
-      }
-
-      if (error instanceof ClientError) {
-        reject(error);
-        return;
-      }
-
-      if (error instanceof Error) {
-        reject(new ClientError(error.message, FILE_NAME, methodName));
-        return;
-      }
-
-      reject(new ClientError('Auth failed', FILE_NAME, methodName));
-    };
-
     let limit = 0;
 
     if (pullingTimer) {
@@ -116,66 +83,49 @@ const getToken = async (codeVerifier: string): Promise<void> => {
     }
 
     pullingTimer = setInterval(async () => {
-      try {
-        limit += 1;
+      limit += 1;
 
-        if (limit >= 20) {
-          finish({
-            ok: false,
-            error: new ClientError(
-              'Too much time has passed trying to Login, please try again.',
-              FILE_NAME,
-              methodName,
-            ),
-          });
-          return;
-        }
-
-        const token = await oauth.getToken(codeVerifier);
-
-        if (token.failed === false) {
-          localStorage.setItem(storageNames.accessTokenType, token.data.token_type);
-          localStorage.setItem(storageNames.accessToken, token.data.access_token);
-
-          await getProfile(token.data.token_type, token.data.access_token);
-          finish({ ok: true });
-          return;
-        }
-
-        if (token.data.status === 404) {
-          return;
-        }
-
-        finish({
-          ok: false,
-          error: new ClientError(
-            `Receiving token failed: ${token.data?.message || 'Unknown error'}.`,
+      if (limit >= 20) {
+        clearInterval(pullingTimer!);
+        pullingTimer = null;
+        reject(
+          new ClientError(
+            'Too much time has passed trying to Login, please try again.',
             FILE_NAME,
             methodName,
           ),
-        });
+        );
+        return;
+      }
+
+      try {
+        const token = await oauth.getToken(codeVerifier);
+
+        clearInterval(pullingTimer!);
+        pullingTimer = null;
+
+        localStorage.setItem(storageNames.accessTokenType, token.token_type);
+        localStorage.setItem(storageNames.accessToken, token.access_token);
+
+        await getProfile(token.token_type, token.access_token);
+        resolve();
       } catch (error) {
-        finish({ ok: false, error });
+        if (error instanceof OAuthAPIError && error.isAuthPending) {
+          return;
+        }
+
+        clearInterval(pullingTimer!);
+        pullingTimer = null;
+        reject(error);
       }
     }, 3000);
   });
 };
 
 const getProfile = async (tokenType: string, accessToken: string): Promise<void> => {
-  const methodName = 'getProfile';
   const profile = await oauth.getProfile(tokenType, accessToken);
-
-  if (profile.failed === false) {
-    UserStore.login(profile.data.mail, profile.data.name);
-    await getLicenceKey();
-    return;
-  }
-
-  throw new ClientError(
-    profile.data.message,
-    FILE_NAME,
-    profile.data.methodName || methodName,
-  );
+  UserStore.login(profile.mail, profile.name);
+  await getLicenceKey();
 };
 
 export const getLicenceKey = async (): Promise<void> => {
@@ -244,7 +194,6 @@ export const getLicenceKey = async (): Promise<void> => {
 };
 
 export const onAuth = async (): Promise<void> => {
-  const methodName = 'onAuth';
   await initAppInfo();
 
   const codeVerifier = CryptoJS.lib.WordArray.random(50).toString();
@@ -256,17 +205,6 @@ export const onAuth = async (): Promise<void> => {
 
   const link = getAuthLink(appInfo.deviceId, codeVerifier, codeChallenge);
 
-  try {
-    await shell.openExternal(link, 'Open browser for login');
-    await getToken(codeVerifier);
-  } catch (error) {
-    console.error('User has blocked browser or auth failed', error);
-    throw error instanceof ClientError
-      ? error
-      : new ClientError(
-          error instanceof Error ? error.message : 'Auth failed',
-          FILE_NAME,
-          methodName,
-        );
-  }
+  await shell.openExternal(link, 'Open browser for login');
+  await getToken(codeVerifier);
 };
