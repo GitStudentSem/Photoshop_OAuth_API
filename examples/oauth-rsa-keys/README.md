@@ -2,6 +2,10 @@
 
 Минимальный Photoshop-плагин (UXP + TypeScript + Webpack), демонстрирующий OAuth-flow с проверкой RSA-лицензии через `@relu-ps/oauth-api`: авторизация в браузере, polling токена, загрузка профиля и получение license key.
 
+## Для кого этот пример
+
+Используйте этот пример, если в вашем плагине лицензия привязывается к установке и проверяется локально по RSA-подписи.
+
 ## Что делает пример
 
 1. По кнопке **Authorize** генерируются `deviceId`, PKCE-пара (`codeVerifier` / `codeChallenge`) и ссылка авторизации.
@@ -66,6 +70,8 @@ npm install
 npm run build
 ```
 
+Быстрый smoke-check после сборки: убедитесь, что появился файл `dist/index.js`.
+
 Для разработки с автопересборкой:
 
 ```bash
@@ -92,6 +98,19 @@ npm run dev
 - `validateSavedSession()` — проверка RSA license key при старте.
 
 `UserStore` (`src/UserStore.ts`) хранит `isAuth`, email, имя и license key в `localStorage`.
+
+## Что заменить под свой проект
+
+- Префикс `installationId` в `src/appInfo.ts` (вместо `R4VS` используйте свой).
+- `publicKey` в `src/appInfo.ts` (встройте ваш публичный ключ).
+- `client_id` / `programName` в OAuth-части.
+- Серверный endpoint выдачи лицензии (куда клиент отправляет `email + installationId`).
+
+## Важный момент про безопасность
+
+- Приватный ключ находится только на сервере (или keygen-машине).
+- Клиент получает только `licenseKey` и проверяет его публичным ключом.
+- Если приватный ключ попадёт в клиент, схема RSA-лицензирования теряет смысл.
 
 ## Зависимости
 

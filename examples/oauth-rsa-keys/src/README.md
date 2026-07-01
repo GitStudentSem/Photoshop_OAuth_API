@@ -64,6 +64,15 @@ POST /api/license/sign
 
 Детали генерации RSA-ключей и CLI-команды: [`../../rsa-keygen/README.md`](../../rsa-keygen/README.md)
 
+## Типичные вопросы
+
+- Нужен ли `installationId` для генерации RSA-пары?  
+  Нет. RSA-пара создаётся отдельно (`generate`), без `installationId`.
+- Где выполняется `sign`?  
+  На сервере (или keygen-машине), где хранится приватный ключ.
+- Что хранится в клиенте?  
+  `publicKey`, `deviceId`, `installationId`, полученный `licenseKey`.
+
 ## Важно
 
 - `client_id` / `programName`: `retouch4me_vectorscope_panel` (как в vectorscope, не `retouch4me_photoshop_panel` из npm по умолчанию)

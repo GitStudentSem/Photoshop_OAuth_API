@@ -2,6 +2,10 @@
 
 Минимальный Photoshop-плагин (UXP + TypeScript + Webpack), демонстрирующий авторизацию по email и паролю через `@relu-ps/oauth-api`: вход, сохранение сессии и получение retouch-токена.
 
+## Для кого этот пример
+
+Используйте этот пример, если в продукте нужен вход по email/паролю (без браузерного PKCE flow).
+
 ## Что делает пример
 
 1. Пользователь вводит email и пароль в поля панели.
@@ -68,6 +72,8 @@ npm install
 npm run build
 ```
 
+Быстрый smoke-check после сборки: убедитесь, что появился файл `dist/index.js`.
+
 Для разработки с автопересборкой:
 
 ```bash
@@ -93,6 +99,13 @@ npm run dev
 - `generateRetouchSession()` — HMAC-SHA512(session + `"retouchtoken"`).
 
 `UserStore` (`src/UserStore.ts`) хранит `isAuth`, email, имя и остаток ретушей в `localStorage`.
+
+## Что заменить под свой проект
+
+- Имя приложения (`application` / `programName`) в запросах к API.
+- Логику хранения сессии (`UserStore`) и срок жизни токенов.
+- Конфигурацию окружений в `examples/shared/oauthStaticServers.ts`.
+- UI-валидацию email/пароля и обработку пользовательских ошибок.
 
 ## Зависимости
 

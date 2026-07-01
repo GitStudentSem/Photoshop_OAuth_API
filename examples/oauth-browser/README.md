@@ -2,6 +2,10 @@
 
 Минимальный Photoshop-плагин (UXP + TypeScript + Webpack), демонстрирующий полный OAuth-flow через `@relu-ps/oauth-api`: авторизация в браузере, polling токена, загрузка профиля и получение retouch-токена.
 
+## Для кого этот пример
+
+Берите этот пример как базовый шаблон, если в вашем плагине нужен стандартный OAuth PKCE flow через внешний браузер.
+
 ## Что делает пример
 
 1. По кнопке **Authorize** генерируются `deviceId`, PKCE-пара (`codeVerifier` / `codeChallenge`) и ссылка авторизации.
@@ -72,6 +76,8 @@ npm install
 npm run build
 ```
 
+Быстрый smoke-check после сборки: убедитесь, что появился файл `dist/index.js`.
+
 Для разработки с автопересборкой:
 
 ```bash
@@ -98,6 +104,13 @@ npm run dev
 - `getRetouchToken()` — запрос retouch-токена с HMAC-сессией.
 
 `UserStore` (`src/UserStore.ts`) хранит `isAuth`, email, имя и остаток ретушей в `localStorage`.
+
+## Что заменить под свой проект
+
+- `client_id` / `programName` (если используете кастомный `getAuthLink`).
+- Правила формирования `deviceId` (если требуется другой fingerprint).
+- Логику сохранения пользователя (`UserStore`) под вашу модель данных.
+- Набор серверов в `examples/shared/oauthStaticServers.ts` (если нужны свои endpoint-ы).
 
 ## Зависимости
 
