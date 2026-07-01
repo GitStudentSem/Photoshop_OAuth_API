@@ -13,25 +13,27 @@ npm install @relu-ps/oauth-api
 ## Быстрый старт
 
 ```ts
-import OauthAPI from "@relu-ps/oauth-api";
+import OauthAPI, { OAuthAPIError } from "@relu-ps/oauth-api";
 
-const oauth = new OauthAPI((type, error) => {
-  console.error(error);
-});
+const oauth = new OauthAPI();
 
 // 1. Сформировать ссылку для авторизации в браузере (PKCE)
 const link = oauth.getLink(deviceId, codeVerifier, codeChallenge);
 
-// 2. После того как пользователь авторизовался — получить токен
-const tokenResult = await oauth.getToken(codeVerifier);
-if (!tokenResult.failed) {
-  const { access_token, token_type } = tokenResult.data;
+try {
+  // 2. После того как пользователь авторизовался — получить токен
+  const token = await oauth.getToken(codeVerifier);
+  const { access_token, token_type } = token;
 
   // 3. Загрузить профиль
-  const profileResult = await oauth.getProfile(token_type, access_token);
-  if (!profileResult.failed) {
-    console.log(profileResult.data.mail, profileResult.data.name);
+  const profile = await oauth.getProfile(token_type, access_token);
+  console.log(profile.mail, profile.name);
+} catch (error) {
+  if (error instanceof OAuthAPIError && error.isAuthPending) {
+    // пользователь ещё не завершил авторизацию в браузере
+    return;
   }
+  console.error(error);
 }
 ```
 
@@ -42,10 +44,26 @@ if (!tokenResult.failed) {
 ### Конструктор
 
 ```ts
-new OauthAPI(errorHandler: ErrorHandlerType)
+new OauthAPI()
 ```
 
-`errorHandler` вызывается при ошибках внутри библиотеки. Все публичные методы (кроме `getOnlineRegistrationKey`) не бросают исключения, а возвращают `{ failed: true, data: ErrorType }`.
+Создаёт экземпляр с production endpoint URL. Ошибки API не логируются внутри библиотеки — публичные методы бросают `OAuthAPIError`, обработку и логирование выполняет вызывающий код.
+
+### Ошибки
+
+```ts
+import { OAuthAPIError } from "@relu-ps/oauth-api";
+
+try {
+  await oauth.getToken(codeVerifier);
+} catch (error) {
+  if (error instanceof OAuthAPIError) {
+    console.error(error.status, error.methodName, error.message);
+  }
+}
+```
+
+`OAuthAPIError.isAuthPending` — `true` для `404` от `getToken` (ожидание авторизации в браузере при polling).
 
 ### Методы
 
@@ -73,7 +91,7 @@ oauth.setBaseUrl({
 
 ### Типы
 
-TypeScript-типы (`GetTokenDataType`, `GetProfileDataType`, `ErrorType` и др.) поставляются вместе с пакетом в `dist/OauthAPI.d.ts`.
+TypeScript-типы (`GetTokenDataType`, `GetProfileDataType`, `OAuthAPIError`, `ErrorType` и др.) поставляются вместе с пакетом в `dist/`.
 
 ## Разработка
 
@@ -95,8 +113,9 @@ npm run docs
 
 ```
 src/
-  OauthAPI.ts      # основной класс
-  OAuthTypes.d.ts  # типы ответов и ошибок
+  OauthAPI.ts       # основной класс
+  OAuthAPIError.ts  # типизированная ошибка API
+  OAuthTypes.d.ts   # типы ответов
 dist/              # собранный пакет (публикуется в Nexus)
 examples/
   via_OAuth/       # пример UXP-плагина

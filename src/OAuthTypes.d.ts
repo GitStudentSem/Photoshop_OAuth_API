@@ -1,5 +1,5 @@
 /**
- * Standardized error payload returned by API methods on failure.
+ * Standardized error payload used inside {@link OAuthAPIError}.
  */
 export type ErrorType = {
   /** Human-readable error message. */
@@ -8,21 +8,7 @@ export type ErrorType = {
   status: number;
   /** Name of the method where the error originated. */
   methodName: string;
-  /** Name of the source module/class where the error originated. */
-  fileName: string;
 };
-
-/**
- * Callback signature used to report API logs and structured errors.
- */
-export type ErrorHandlerType = (
-  /** Log severity/type, for example `error`. */
-  type: string,
-  /** Structured error payload. */
-  error: ErrorType,
-  /** Optional flag to control UI/console visibility of the log entry. */
-  isShowLog?: boolean,
-) => void;
 
 /**
  * Successful OAuth token response payload.
@@ -37,12 +23,9 @@ export type GetTokenDataType = {
 };
 
 /**
- * Result of `getToken`: success payload or normalized error payload.
+ * Result of `getToken`.
  */
-export type GetTokenReturnType = Promise<
-  /** Successful result with token data. */
-  { failed: false; data: GetTokenDataType } | { failed: true; data: ErrorType }
->;
+export type GetTokenReturnType = Promise<GetTokenDataType>;
 
 /**
  * Successful user profile response payload.
@@ -67,17 +50,9 @@ export type GetProfileDataType = {
 };
 
 /**
- * Result of `getProfile`: success payload or normalized error payload.
+ * Result of `getProfile`.
  */
-export type GetProfileReturnType = Promise<
-  | {
-      /** Failure flag for successful branch. */
-      failed: false;
-      /** Parsed user profile payload. */
-      data: GetProfileDataType;
-    }
-  | { failed: true; data: ErrorType }
->;
+export type GetProfileReturnType = Promise<GetProfileDataType>;
 
 /**
  * Successful retouch token response payload.
@@ -92,14 +67,32 @@ export type GetRetouchTokenDataType = {
 };
 
 /**
- * Result of `getRetouchToken`: success payload or normalized error payload.
+ * Result of `getRetouchToken`.
  */
-export type GetRetouchTokenReturnType = Promise<
-  | {
-      /** Failure flag for successful branch. */
-      failed: false;
-      /** Parsed retouch token payload. */
-      data: GetRetouchTokenDataType;
-    }
-  | { failed: true; data: ErrorType }
->;
+export type GetRetouchTokenReturnType = Promise<GetRetouchTokenDataType>;
+
+/**
+ * Successful login-via-email-password response payload.
+ */
+export type LoginViaEmailPasswordDataType = {
+  /** Access level. */
+  result: number;
+  /** User session string. */
+  session: string;
+  gateway: number;
+  /** `1` when the user is authorized, `0` otherwise. */
+  loggedin: boolean;
+  mail: string;
+  firstname: string;
+  lastname: string;
+  /** `true` when first or last name is missing. */
+  askname: boolean;
+  /** `1` to show retouch UI, `0` to hide it. */
+  retouching: number;
+};
+
+/**
+ * Result of `loginViaEmailPassword`.
+ */
+export type LoginViaEmailPasswordReturnType =
+  Promise<LoginViaEmailPasswordDataType>;

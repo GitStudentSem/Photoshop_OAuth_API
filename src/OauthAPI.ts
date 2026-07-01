@@ -1,5 +1,17 @@
+import { OAuthAPIError } from "./OAuthAPIError";
 import type {
-  ErrorHandlerType,
+  GetProfileDataType,
+  GetProfileReturnType,
+  GetRetouchTokenDataType,
+  GetRetouchTokenReturnType,
+  GetTokenDataType,
+  GetTokenReturnType,
+  LoginViaEmailPasswordDataType,
+  LoginViaEmailPasswordReturnType,
+} from "./OAuthTypes";
+
+export { OAuthAPIError } from "./OAuthAPIError";
+export type {
   ErrorType,
   GetProfileDataType,
   GetProfileReturnType,
@@ -7,6 +19,8 @@ import type {
   GetRetouchTokenReturnType,
   GetTokenDataType,
   GetTokenReturnType,
+  LoginViaEmailPasswordDataType,
+  LoginViaEmailPasswordReturnType,
 } from "./OAuthTypes";
 
 /**
@@ -57,9 +71,6 @@ export default class OauthAPI {
    *
    */
 
-  /** The error logging function. */
-  errorHandler: ErrorHandlerType;
-
   /** Authorization start link. */
   authorizeLink: string;
 
@@ -81,21 +92,13 @@ export default class OauthAPI {
   /** Link for login via email and password. */
   loginViaEmailPasswordLink: string;
 
-  /** filename for logger function */
-  fileName: "OAuthAPI";
-
   /**
    * Creates a new OauthAPI instance with default production endpoints.
    *
-   * @param errorHandler - Callback used to log and handle API errors.
    * @remarks The constructor initializes all endpoint URLs and stores them as mutable instance state.
    * Use `setBaseUrl` or `setFullUrl` to override defaults for staging or custom environments.
    */
-  constructor(
-    /** The error logging function. */
-    errorHandler: ErrorHandlerType,
-  ) {
-    this.errorHandler = errorHandler;
+  constructor() {
     this.authorizeLink = `https://retouch4.me${pages.authorize}`;
     this.redirectLink = `https://retouch4.me${pages.redirect}`;
     this.tokenByCodeVerifierLink = `https://retouch4.me${pages.tokenByCodeVerifier}`;
@@ -103,66 +106,6 @@ export default class OauthAPI {
     this.getRetouchTokenLink = `https://retoucher.hz.labs.retouch4.me${pages.lutgetretouchtoken}`;
     this.getRetouchTokenWithoutEmailLink = `https://retouch4.me${pages.retouch}`;
     this.loginViaEmailPasswordLink = `https://retoucher.hz.labs.retouch4.me${pages.loginViaEmailPassword}`;
-    this.fileName = "OAuthAPI";
-  }
-
-  /**
-   * Builds a standardized error response object and sends it to the configured error handler.
-   *
-   * @param data - Error payload with message and optional HTTP status.
-   * @param methodName - Source method name used for error attribution.
-   * @returns A normalized failed result in the `{ failed: true, data: ErrorType }` format.
-   * @remarks This helper does not throw and is used by public API methods to return predictable error objects.
-   */
-  _generateError(
-    data: { message: string; status?: number },
-    methodName: string,
-  ): { failed: true; data: ErrorType } {
-    const errorData: ErrorType = {
-      message: data.message,
-      status: data.status || 0,
-      methodName,
-      fileName: this.fileName,
-    };
-    this.errorHandler("error", errorData);
-
-    return {
-      failed: true,
-      data: errorData,
-    };
-  }
-
-  /**
-   * Converts an unknown caught exception into a normalized API error result.
-   *
-   * @param error - Caught exception or arbitrary value from a `catch` block.
-   * @param methodName - Source method name used for error attribution.
-   * @returns A normalized failed result in the `{ failed: true, data: ErrorType }` format.
-   * @remarks This helper does not rethrow and always returns a structured error object.
-   */
-  _catchError(
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    error: Error | any,
-    methodName: string,
-  ): { failed: true; data: ErrorType } {
-    const errorData: ErrorType = {
-      message: error.message || "unknown catch error",
-      status: 0,
-      methodName,
-      fileName: this.fileName,
-    };
-    this.errorHandler("error", errorData);
-
-    if (error instanceof Error) {
-      return {
-        failed: true,
-        data: errorData,
-      };
-    }
-    return {
-      failed: true,
-      data: errorData,
-    };
   }
 
   /**
@@ -216,7 +159,7 @@ export default class OauthAPI {
    * @returns Authorization URL that should be opened by a user to start OAuth flow.
    * @example
    * ```ts
-   * const oauth = new OauthAPI(console.error as any);
+   * const oauth = new OauthAPI();
    * const link = oauth.getLink("device-id", "verifier", "challenge");
    * ```
    * @remarks This method only generates a URL and does not perform network requests.
@@ -241,15 +184,14 @@ export default class OauthAPI {
    * Obtains OAuth access token data by `code_verifier`.
    *
    * @param codeVerifier - PKCE code verifier that was used for authorization link generation.
-   * @returns A promise resolving to a successful token payload or a normalized error object.
+   * @returns A promise resolving to token data.
    * @example
    * ```ts
-   * const result = await oauth.getToken(codeVerifier);
-   * if (!result.failed) {
-   *   console.log(result.data.access_token);
-   * }
+   * const token = await oauth.getToken(codeVerifier);
+   * console.log(token.access_token);
    * ```
-   * @remarks This method does not throw network/API errors; it returns `{ failed: true, data: ErrorType }`.
+   * @throws {@link OAuthAPIError} On HTTP or network failures. Use {@link OAuthAPIError.isAuthPending}
+   * to detect OAuth polling state (`404` from `getToken`).
    * @see https://docs.google.com/document/d/1gX_YwTV0v1hI2-shIlj_Fdk23P9S1Dz8B3wZvjLlIBw/edit#heading=h.2vd8zkzi6cd9
    */
   async getToken(codeVerifier: string): GetTokenReturnType {
@@ -261,15 +203,23 @@ export default class OauthAPI {
 
       if (response.ok) {
         const result: GetTokenDataType = await response.json();
-        return { failed: false, data: result };
+        return result;
       }
 
-      return this._generateError(
-        { message: response.statusText, status: response.status },
+      throw new OAuthAPIError({
+        message: response.statusText,
+        status: response.status,
         methodName,
-      );
+      });
     } catch (error) {
-      return this._catchError(error, methodName);
+      if (error instanceof OAuthAPIError) {
+        throw error;
+      }
+      throw new OAuthAPIError({
+        message: error instanceof Error ? error.message : "unknown catch error",
+        status: 0,
+        methodName,
+      });
     }
   }
 
@@ -278,18 +228,13 @@ export default class OauthAPI {
    *
    * @param tokenType - Token type returned by `getToken` (for example `Bearer`).
    * @param token - Access token returned by `getToken`.
-   * @returns A promise resolving to profile data or a normalized error object.
+   * @returns A promise resolving to profile data.
    * @example
    * ```ts
-   * const tokenResult = await oauth.getToken(codeVerifier);
-   * if (!tokenResult.failed) {
-   *   const profileResult = await oauth.getProfile(
-   *     tokenResult.data.token_type,
-   *     tokenResult.data.access_token,
-   *   );
-   * }
+   * const token = await oauth.getToken(codeVerifier);
+   * const profile = await oauth.getProfile(token.token_type, token.access_token);
    * ```
-   * @remarks This method does not throw network/API errors; it returns `{ failed: true, data: ErrorType }`.
+   * @throws {@link OAuthAPIError} On HTTP or network failures.
    */
   async getProfile(tokenType: string, token: string): GetProfileReturnType {
     const methodName = "getProfile";
@@ -300,15 +245,23 @@ export default class OauthAPI {
 
       if (response.ok) {
         const result: GetProfileDataType = await response.json();
-        return { failed: false, data: result };
+        return result;
       }
 
-      return this._generateError(
-        { message: response.statusText, status: response.status },
+      throw new OAuthAPIError({
+        message: response.statusText,
+        status: response.status,
         methodName,
-      );
+      });
     } catch (error) {
-      return this._catchError(error, methodName);
+      if (error instanceof OAuthAPIError) {
+        throw error;
+      }
+      throw new OAuthAPIError({
+        message: error instanceof Error ? error.message : "unknown catch error",
+        status: 0,
+        methodName,
+      });
     }
   }
 
@@ -319,7 +272,7 @@ export default class OauthAPI {
    * @param session - `access_token` value obtained from `getToken`.
    * @param deviceid - Hardware identifier tied to the client computer.
    * @param application - Client application identifier (for example `retouch4me_photoshop_panel`).
-   * @returns A promise resolving to retouch token data or a normalized error object.
+   * @returns A promise resolving to retouch token data.
    * @example
    * ```ts
    * const result = await oauth.getRetouchToken(
@@ -329,7 +282,7 @@ export default class OauthAPI {
    *   "retouch4me_photoshop_panel",
    * );
    * ```
-   * @remarks This method does not throw network/API errors; it returns `{ failed: true, data: ErrorType }`.
+   * @throws {@link OAuthAPIError} On HTTP or network failures.
    */
   async getRetouchToken(
     email: string,
@@ -358,15 +311,23 @@ export default class OauthAPI {
 
       if (response.ok) {
         const result: GetRetouchTokenDataType = await response.json();
-        return { failed: false, data: result };
+        return result;
       }
 
-      return this._generateError(
-        { message: response.statusText, status: response.status },
+      throw new OAuthAPIError({
+        message: response.statusText,
+        status: response.status,
         methodName,
-      );
+      });
     } catch (error) {
-      return this._catchError(error, methodName);
+      if (error instanceof OAuthAPIError) {
+        throw error;
+      }
+      throw new OAuthAPIError({
+        message: error instanceof Error ? error.message : "unknown catch error",
+        status: 0,
+        methodName,
+      });
     }
   }
 
@@ -378,8 +339,8 @@ export default class OauthAPI {
    * @param params.password - User password.
    * @param params.deviceid - Hardware identifier tied to the client computer.
    * @param params.application - Client application identifier.
-   * @returns A promise resolving to session data or a normalized error object.
-   * @remarks This method does not throw network/API errors; it returns `{ failed: true, data: ErrorType }`.
+   * @returns A promise resolving to session data.
+   * @throws {@link OAuthAPIError} On HTTP or network failures.
    */
   async loginViaEmailPassword({
     email,
@@ -391,7 +352,7 @@ export default class OauthAPI {
     password: string;
     deviceid: string;
     application: string;
-  }) {
+  }): LoginViaEmailPasswordReturnType {
     const methodName = "loginViaEmailPassword";
     try {
       const formdata = new FormData();
@@ -409,41 +370,24 @@ export default class OauthAPI {
       });
 
       if (response.ok) {
-        const result: {
-          /** уровень доступа **/
-          result: number;
-          /** строка с сессией пользователя **/
-          session: string;
-          /** ? **/
-          gateway: number;
-          /** 1 - пользователь авторизован
-           *
-           * 0 - пользователь не авторизован
-           * **/
-          loggedin: boolean;
-          mail: string;
-          firstname: string;
-          lastname: string;
-          /** возможные значения:
-           * true - не заполнено имя или фамилия
-           * false - данные пользователя заполнены
-           * **/
-          askname: boolean;
-          /** ввозможные значения:
-           * 1 - показывать пользователю ретушь
-           * 0 - не показывать пользователю ретушь
-           * **/
-          retouching: number;
-        } = await response.json();
-        return { failed: false, data: result };
+        const result: LoginViaEmailPasswordDataType = await response.json();
+        return result;
       }
 
-      return this._generateError(
-        { message: response.statusText, status: response.status },
+      throw new OAuthAPIError({
+        message: response.statusText,
+        status: response.status,
         methodName,
-      );
+      });
     } catch (error) {
-      return this._catchError(error, methodName);
+      if (error instanceof OAuthAPIError) {
+        throw error;
+      }
+      throw new OAuthAPIError({
+        message: error instanceof Error ? error.message : "unknown catch error",
+        status: 0,
+        methodName,
+      });
     }
   }
 
@@ -546,17 +490,32 @@ export default class OauthAPI {
       };
 
       if (result.error === "WEBAPIERROR_SESSION_INVALID") {
-        throw new Error("Session is invalid");
+        throw new OAuthAPIError({
+          message: "Session is invalid",
+          status: 0,
+          methodName: "getOnlineRegistrationKey",
+        });
       }
       const noKeysLeft = result.keysleft === 0 && !result.key;
       const keysLmit = result.keylimit === result.keycount && !result.key;
       if (noKeysLeft || keysLmit) {
-        throw new Error("No keys left");
+        throw new OAuthAPIError({
+          message: "No keys left",
+          status: 0,
+          methodName: "getOnlineRegistrationKey",
+        });
       }
       return result;
     } catch (error) {
       onLogout();
-      throw error;
+      if (error instanceof OAuthAPIError) {
+        throw error;
+      }
+      throw new OAuthAPIError({
+        message: error instanceof Error ? error.message : "unknown catch error",
+        status: 0,
+        methodName: "getOnlineRegistrationKey",
+      });
     }
   }
 
@@ -564,10 +523,10 @@ export default class OauthAPI {
    * Obtains an access token without explicitly passing the user's email.
    *
    * @param session - Access token obtained from `getToken`.
-   * @returns A promise resolving to backend response data or a normalized error object.
+   * @returns A promise resolving to backend response data.
    * @remarks
    * - This endpoint path is considered less stable/experimental in current project usage.
-   * - This method does not throw network/API errors; it returns `{ failed: true, data: ErrorType }`.
+   * @throws {@link OAuthAPIError} On HTTP or network failures.
    */
   async getRetouchTokenWithoutEmail(session: string) {
     const methodName = "getRetouchTokenWithoutEmail";
@@ -579,15 +538,23 @@ export default class OauthAPI {
       if (response.ok) {
         const result = await response.json();
 
-        return { failed: false, data: result };
+        return result;
       }
 
-      return this._generateError(
-        { message: response.statusText, status: response.status },
+      throw new OAuthAPIError({
+        message: response.statusText,
+        status: response.status,
         methodName,
-      );
+      });
     } catch (error) {
-      return this._catchError(error, methodName);
+      if (error instanceof OAuthAPIError) {
+        throw error;
+      }
+      throw new OAuthAPIError({
+        message: error instanceof Error ? error.message : "unknown catch error",
+        status: 0,
+        methodName,
+      });
     }
   }
 }

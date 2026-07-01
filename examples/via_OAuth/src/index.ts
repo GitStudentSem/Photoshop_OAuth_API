@@ -1,42 +1,55 @@
 import CryptoJS from "crypto-js";
 import { shell } from "uxp";
-import OauthAPI from "@relu-ps/oauth-api";
+import OauthAPI, { OAuthAPIError } from "@relu-ps/oauth-api";
 import { initServerSelect } from "../../shared/oauthStaticServers";
 import UserStore from "./UserStore";
 
-
-
 const catchError = (
-    userMessage: string,
-    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    error: Error | any,
-    methodName: string,
-    fileName: string,
-  ) => {
+  userMessage: string,
+  error: unknown,
+  methodName: string,
+  fileName: string,
+) => {
+  if (error instanceof OAuthAPIError) {
     console.error({
       userMessage,
       error: {
         message: error.message,
-        methodName: methodName,
-        fileName: fileName,
+        status: error.status,
+        methodName: error.methodName,
+        fileName: error.fileName,
       },
+    });
+    return;
+  }
+
+  if (error instanceof Error) {
+    console.error({
+      userMessage,
+      error: {
+        message: error.message,
+        methodName,
+        fileName,
+      },
+    });
+    return;
+  }
+
+  console.error({ userMessage, error, methodName, fileName });
+};
+
+const checkInternetConnection = (actionName: string) => {
+  const isOnline = navigator.onLine;
+  if (!isOnline) {
+    console.error({
+      userMessage: `${actionName} failed. Check your internet connection`,
     });
   }
 
-  const checkInternetConnection = (actionName: string) => {
-    const isOnline = navigator.onLine;
-    if (!isOnline) {
-      console.error({
-        userMessage: `${actionName} failed. Check your internet connection`,
-      });
-    }
-  
-    return isOnline;
-  };
+  return isOnline;
+};
 
-export const oauth: OauthAPI = new OauthAPI((type, error, isShowLog) =>
-  console.error(error, isShowLog),
-);
+export const oauth: OauthAPI = new OauthAPI();
 const FILE_NAME = "auth";
 
 let pullingTimer: ReturnType<typeof setInterval> | undefined;
@@ -53,32 +66,30 @@ const getToken = (codeVerifier: string): Promise<void> => {
       if (limit >= 20) {
         clearInterval(pullingTimer!);
         pullingTimer = undefined;
-        reject(new Error("Too much time has passed trying to Login, please try again."));
+        reject(
+          new Error(
+            "Too much time has passed trying to Login, please try again.",
+          ),
+        );
         return;
       }
 
       try {
         const token = await oauth.getToken(codeVerifier);
 
-        if (token.failed === false) {
-          clearInterval(pullingTimer!);
-          pullingTimer = undefined;
+        clearInterval(pullingTimer!);
+        pullingTimer = undefined;
 
-          localStorage.setItem("accessTokenType", token.data.token_type);
-          localStorage.setItem("accessToken", token.data.access_token);
+        localStorage.setItem("accessTokenType", token.token_type);
+        localStorage.setItem("accessToken", token.access_token);
 
-          await getProfile(token.data.token_type, token.data.access_token);
-          resolve(); // весь flow завершён — снаружи можно await'ить
+        await getProfile(token.token_type, token.access_token);
+        resolve();
+      } catch (error) {
+        if (error instanceof OAuthAPIError && error.isAuthPending) {
           return;
         }
 
-        // 404 — пользователь ещё не залогинился, продолжаем polling
-        if (token.data.status === 404) return;
-
-        clearInterval(pullingTimer!);
-        pullingTimer = undefined;
-        reject(token.data);
-      } catch (error) {
         clearInterval(pullingTimer!);
         pullingTimer = undefined;
         reject(error);
@@ -87,20 +98,13 @@ const getToken = (codeVerifier: string): Promise<void> => {
   });
 };
 
-const getProfile = async (tokenType: string, accessToken: string): Promise<void> => {
+const getProfile = async (
+  tokenType: string,
+  accessToken: string,
+): Promise<void> => {
   const profile = await oauth.getProfile(tokenType, accessToken);
-
-  if (profile.failed === false) {
-    UserStore.login(profile.data.mail, profile.data.name);
-    await getRetouchToken();
-    return;
-  }
-
-  console.error({
-    userMessage: "Receiving profile failed",
-    error: profile.data,
-  });
-  throw profile.data; // пробрасываем вверх → getToken сделает reject
+  UserStore.login(profile.mail, profile.name);
+  await getRetouchToken();
 };
 
 export const getRetouchToken = async (): Promise<void> => {
@@ -123,7 +127,7 @@ export const getRetouchToken = async (): Promise<void> => {
     const stringToHash = accessToken + RETOUCH_HASH_PARAM;
     const hash = hasher.finalize(stringToHash);
     return hash.toString(CryptoJS.enc.Hex);
-  }; 
+  };
 
   const email = localStorage.getItem("userEmail");
 
@@ -132,28 +136,35 @@ export const getRetouchToken = async (): Promise<void> => {
     throw new Error("Email was not found.");
   }
 
-  const tokenData = await oauth.getRetouchToken(
-    email,
-    generateSession(),
-    localStorage.getItem("deviceid") || "",
-    "retouch4me_photoshop_panel",
-  );
+  try {
+    const tokenData = await oauth.getRetouchToken(
+      email,
+      generateSession(),
+      localStorage.getItem("deviceid") || "",
+      "retouch4me_photoshop_panel",
+    );
 
-  if (tokenData.failed === false) {
-    UserStore.setRemainingRetouch(tokenData.data.remaining.professional);
-    localStorage.setItem("retouchToken", tokenData.data.token);
-    return;
+    UserStore.setRemainingRetouch(tokenData.remaining.professional);
+    localStorage.setItem("retouchToken", tokenData.token);
+  } catch (error) {
+    if (error instanceof OAuthAPIError && error.status === 401) {
+      UserStore.logout();
+    }
+
+    console.error({
+      userMessage: "Receiving retouch token failed",
+      error:
+        error instanceof OAuthAPIError
+          ? {
+              message: error.message,
+              status: error.status,
+              methodName: error.methodName,
+              fileName: error.fileName,
+            }
+          : error,
+    });
+    throw error;
   }
-
-  if (tokenData.data.status === 401) {
-    UserStore.logout();
-  }
-
-  console.error({
-    userMessage: "Receiving retouch token failed",
-    error: tokenData.data,
-  });
-  throw tokenData.data;
 };
 
 export const onAuth = async (): Promise<void> => {
@@ -188,20 +199,19 @@ export const onAuth = async (): Promise<void> => {
   const link = oauth.getLink(deviceid, codeVerifier, codeChallenge);
 
   await shell.openExternal(link, "Open browser for login");
-  await getToken(codeVerifier); // теперь реально ждёт до конца
+  await getToken(codeVerifier);
 };
 
 const setUserInfo = () => {
-
   const { isAuth, userEmail, userName, remainingRetouch } = UserStore;
-const userEmailElement = document.getElementById("userEmail");
-const userNameElement = document.getElementById("userName");
-const remainingRetouchElement = document.getElementById("remainingRetouch");
+  const userEmailElement = document.getElementById("userEmail");
+  const userNameElement = document.getElementById("userName");
+  const remainingRetouchElement = document.getElementById("remainingRetouch");
 
-  if (!userEmailElement ) {
+  if (!userEmailElement) {
     throw new Error("User info userEmailElement not found");
   }
-  if (!userNameElement ) {
+  if (!userNameElement) {
     throw new Error("User info userNameElement not found");
   }
   if (!remainingRetouchElement) {
@@ -209,24 +219,23 @@ const remainingRetouchElement = document.getElementById("remainingRetouch");
   }
 
   if (isAuth) {
-    userEmailElement!.textContent = `Email: ${userEmail}`;
-    userNameElement!.textContent = `User Name: ${userName}`;
-    remainingRetouchElement!.textContent = `remaining retouches: ${remainingRetouch}`;
+    userEmailElement.textContent = `Email: ${userEmail}`;
+    userNameElement.textContent = `User Name: ${userName}`;
+    remainingRetouchElement.textContent = `remaining retouches: ${remainingRetouch}`;
   } else {
-    userEmailElement!.textContent = "Email:";
-      userNameElement!.textContent = "User Name:";
-      remainingRetouchElement!.textContent = "remaining retouches: 0";
-    }
-
+    userEmailElement.textContent = "Email:";
+    userNameElement.textContent = "User Name:";
+    remainingRetouchElement.textContent = "remaining retouches: 0";
+  }
 };
 
 async function onAuthorizeClick(): Promise<void> {
   try {
     await onAuth();
-    setUserInfo(); // вызывается только после успешного логина
+    setUserInfo();
   } catch (error) {
     catchError("Authorisation failed", error, "onAuthorizeClick", FILE_NAME);
-    setUserInfo(); // на случай logout внутри flow
+    setUserInfo();
   }
 }
 
@@ -240,4 +249,7 @@ initServerSelect(oauth, () => {
 setUserInfo();
 document.getElementById("authorize")?.addEventListener("click", onAuthorizeClick);
 
-document.getElementById("logout")?.addEventListener("click", ()=>{UserStore.logout();setUserInfo();});
+document.getElementById("logout")?.addEventListener("click", () => {
+  UserStore.logout();
+  setUserInfo();
+});
