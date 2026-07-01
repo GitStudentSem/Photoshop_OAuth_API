@@ -32,6 +32,9 @@
 4. `getLicenceKey()` — HMAC-сессия + `getOnlineRegistrationKey()` (на сервер уходит `email` + `installationId`)
 5. `verifyLicenseKey()` — проверка ключа публичным RSA-ключом
 
+`getAuthLink()` в этом примере — локальная функция из `auth.ts`, а не метод npm-пакета.  
+В `@relu-ps/oauth-api` есть метод `getLink()`, но он использует client_id по умолчанию (`retouch4me_photoshop_panel`).
+
 ## Что откуда берётся
 
 | Что | Где создаётся | Где используется |
@@ -76,5 +79,5 @@ POST /api/license/sign
 ## Важно
 
 - `client_id` / `programName`: `retouch4me_vectorscope_panel` (как в vectorscope, не `retouch4me_photoshop_panel` из npm по умолчанию)
-- Ссылка авторизации строится через `getAuthLink()`, т.к. npm-пакет использует другой client_id
+- Ссылка авторизации строится через локальный `getAuthLink()` из `auth.ts`, т.к. `oauth.getLink()` из npm-пакета использует другой `client_id`
 - Генерация RSA-ключей и подпись лицензий: см. [`../rsa-keygen`](../rsa-keygen)

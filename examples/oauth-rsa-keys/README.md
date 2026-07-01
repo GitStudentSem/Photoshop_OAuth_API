@@ -86,7 +86,7 @@ npm run dev
 2. Откройте Developer Tool → **Add Plugin...**
 3. Укажите `manifest.json` из этой папки.
 4. Нажмите **•••** → **Load** напротив плагина.
-5. Переключитесь в Photoshop — панель **TypeScript Webpack Sample** появится в меню плагинов.
+5. Переключитесь в Photoshop — панель **oauth-rsa-keys** появится в меню плагинов.
 
 ## OAuth-flow в коде
 
