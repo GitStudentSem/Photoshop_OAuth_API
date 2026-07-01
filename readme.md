@@ -37,7 +37,7 @@ try {
 }
 ```
 
-Полный рабочий пример с polling, хранением сессии и UI — в [`examples/via_OAuth`](./examples/via_OAuth).
+Полный рабочий пример с polling, хранением сессии и UI — в [`examples/oauth-browser`](./examples/oauth-browser).
 
 ## API
 
@@ -118,7 +118,7 @@ src/
   OAuthTypes.d.ts   # типы ответов
 dist/              # собранный пакет (публикуется в Nexus)
 examples/
-  via_OAuth/       # пример UXP-плагина
+  oauth-browser/       # пример UXP-плагина
 scripts/           # copy-types, minify
 ```
 

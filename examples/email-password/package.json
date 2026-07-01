@@ -1,5 +1,5 @@
 {
-  "name": "relu.credentials.example",
+  "name": "@relu-ps/example-email-password",
   "version": "1.0.0",
   "description": "Email/password auth example",
   "author": "Retouch4me",

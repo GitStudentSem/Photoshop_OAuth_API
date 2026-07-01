@@ -1,6 +1,6 @@
 {
-  "id": "Login via OAuth keys",
-  "name": "Login via OAuth keys",
+  "id": "oauth-rsa-keys",
+  "name": "oauth-rsa-keys",
   "version": "1.0.0",
   "main": "index.html",
   "host": [
@@ -14,12 +14,21 @@
     "clipboard": "readAndWrite",
     "localFileSystem": "fullAccess",
     "launchProcess": {
-      "schemes": ["http", "https"],
-      "extensions": [".svg", ".png"]
+      "schemes": [
+        "http",
+        "https"
+      ],
+      "extensions": [
+        ".svg",
+        ".png"
+      ]
     },
     "webview": {
       "allow": "yes",
-      "domains": ["https://*.adobe.com", "https://*.google.com"]
+      "domains": [
+        "https://*.adobe.com",
+        "https://*.google.com"
+      ]
     },
     "network": {
       "domains": "all"
@@ -45,9 +54,8 @@
         "width": 230,
         "height": 300
       },
-     
       "label": {
-        "default": "Login via OAuth keys"
+        "default": "oauth-rsa-keys"
       }
     }
   ],

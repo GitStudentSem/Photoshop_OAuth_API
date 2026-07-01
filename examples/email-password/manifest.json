@@ -1,6 +1,6 @@
 {
-  "id": "Login via credentials",
-  "name": "Login via credentials",
+  "id": "email-password",
+  "name": "email-password",
   "version": "1.0.0",
   "main": "index.html",
   "host": [
@@ -31,7 +31,7 @@
         "height": 300
       },
       "label": {
-        "default": "Login via credentials"
+        "default": "email-password"
       }
     }
   ],

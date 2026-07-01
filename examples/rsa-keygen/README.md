@@ -2,7 +2,7 @@
 
 Node.js утилита для генерации RSA-256 ключей, подписи и проверки лицензионных ключей в формате Base41 (Niobium).
 
-Используется в UXP-панелях Retouch4me (vectorscope, via_OAuth_2): клиент хранит **публичный** ключ, сервер / keygen-машина — **приватный**.
+Используется в UXP-панелях Retouch4me (vectorscope, oauth-rsa-keys): клиент хранит **публичный** ключ, сервер / keygen-машина — **приватный**.
 
 ## Установка
 
@@ -22,6 +22,7 @@ npm run keygen -- generate
 npm run keygen -- generate --keys ./my-app-keys
 
 # Подписать email + installationId → лицензионный ключ
+# R4VS — это префикс идентификатора приложения Retouch4me Vectorscope (примерное значение)
 npm run keygen -- sign user@example.com R4VS-ABCD-1234-XYZZY
 
 # Проверить ключ
@@ -36,9 +37,12 @@ npm run keygen -- export-public
 1. `npm run keygen -- generate`
 2. `npm run keygen -- export-public` — скопировать `publicKey` в `appInfo.ts`
 3. Приватный ключ (`keys/private.pem`) **не коммитить** и не встраивать в клиент
-4. На бэкенде / в keygen: `sign` для выдачи лицензии пользователю
+4. На бэкенде / в keygen: `sign` для выдачи лицензии пользователю (нужны `email` и `installationId` клиента)
 
-Пример для `via_OAuth_2/src/appInfo.ts`:
+Сквозной клиентский flow (OAuth + получение лицензии) описан в:
+[`../oauth-rsa-keys/src/README.md`](../oauth-rsa-keys/src/README.md)
+
+Пример для `oauth-rsa-keys/src/appInfo.ts`:
 
 ```typescript
 export const publicKey = `-----BEGIN RSA-256 PUBLIC KEY-----
@@ -46,7 +50,24 @@ export const publicKey = `-----BEGIN RSA-256 PUBLIC KEY-----
 -----END RSA-256 PUBLIC KEY-----`;
 ```
 
-Клиентская верификация — `verifyLicenseKey()` в `via_OAuth_2/src/rsa.ts`.
+Клиентская верификация — `verifyLicenseKey()` в `oauth-rsa-keys/src/rsa.ts`.
+
+### Откуда брать installationId
+
+`installationId` генерируется на стороне клиента (в приложении), а не в `rsa-keygen`.
+
+В примере `oauth-rsa-keys` он собирается в `appInfo.ts` так:
+
+```typescript
+_deviceId = await generateDeviceId();
+_installationId = `R4VS-${_deviceId}`;
+```
+
+То есть:
+
+- сначала клиент получает стабильный `deviceId` (fingerprint железа),
+- затем формирует `installationId` с префиксом приложения (`R4VS-...`),
+- этот `installationId` отправляется на сервер для подписи лицензии.
 
 ## Формат ключей
 
@@ -72,8 +93,16 @@ export const publicKey = `-----BEGIN RSA-256 PUBLIC KEY-----
 ## Алгоритм лицензии
 
 1. `hash = SHA256(installationId + "|" + email)` — префикс `R4VS-` снимается
+   - `R4VS` в этом README — идентификатор приложения **Retouch4me Vectorscope**.
+   - В примере используется публичный ключ от Vectorscope.
+   - Для реальных проектов замените и префикс (`R4VS`), и публичный ключ на ваши собственные значения.
 2. `signature = hash^d mod n` (приватный ключ)
 3. Ключ кодируется в Base41 (Niobium), 32 байта → 48 символов
+
+Важно: RSA-пара ключей (`generate`) создаётся независимо от `installationId`.
+`installationId` участвует только в операциях `sign` / `verify` (привязка лицензии к установке).
+
+Коротко: `generate` (один раз) → встроить `publicKey` в клиент → клиент присылает `email + installationId` → сервер делает `sign` приватным ключом → клиент делает `verify` публичным ключом.
 
 ## Тесты
 

@@ -1,6 +1,6 @@
 # examples/shared
 
-Общий код для примеров `via_*`: список production-серверов Retouch4me и переключение URL через `OauthAPI.setFullUrl()`.
+Общий код для примеров `auth-*`: список production-серверов Retouch4me и переключение URL через `OauthAPI.setFullUrl()`.
 
 Подключается **относительным импортом** из `src/` каждого примера:
 
@@ -17,9 +17,9 @@ Webpack при сборке встраивает этот файл в `dist/inde
 ```
 examples/
   shared/
-  via_credentials/
-  via_OAuth/
-  via_OAuth_2/
+  email-password/
+  oauth-browser/
+  oauth-rsa-keys/
 ```
 
 Если выносить один пример в отдельный проект, скопируйте вместе с ним папку `examples/shared/` и сохраните относительный путь `../../shared/` (или скопируйте `oauthStaticServers.ts` в `src/` примера).

@@ -1,6 +1,6 @@
 {
-  "id": "Login via OAuth site",
-  "name": "Login via OAuth site",
+  "id": "oauth-browser",
+  "name": "oauth-browser",
   "version": "1.0.0",
   "main": "index.html",
   "host": [
@@ -30,9 +30,8 @@
         "width": 230,
         "height": 300
       },
-     
       "label": {
-        "default": "Login via OAuth site"
+        "default": "oauth-browser"
       }
     }
   ],

@@ -1,5 +1,5 @@
 /**
- * OAuth static servers — shared server list and URL mapping for via_* examples.
+ * OAuth static servers — shared server list and URL mapping for auth-* examples.
  *
  * Mirrors ServerStore.ts + OauthAPI.setBaseUrl() from photoshop-panel.
  * Use buildOAuthLinks() → oauth.setFullUrl(links) when user picks a server.

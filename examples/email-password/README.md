@@ -1,4 +1,4 @@
-# via_credentials — пример UXP-плагина
+# email-password — пример UXP-плагина
 
 Минимальный Photoshop-плагин (UXP + TypeScript + Webpack), демонстрирующий авторизацию по email и паролю через `@relu-ps/oauth-api`: вход, сохранение сессии и получение retouch-токена.
 
@@ -39,9 +39,9 @@ import { initServerSelect } from "../../shared/oauthStaticServers";
 
 **Нюансы:**
 
-- Репозиторий нужно копировать целиком: путь `../../shared/` валиден только при структуре `examples/via_credentials/` + `examples/shared/`.
+- Репозиторий нужно копировать целиком: путь `../../shared/` валиден только при структуре `examples/email-password/` + `examples/shared/`.
 - Если выносите один пример отдельно — скопируйте `examples/shared/` рядом или перенесите `oauthStaticServers.ts` в `src/` примера.
-- Выбор сервера хранится в `localStorage` (`selectedServerId`) и общий для всех `via_*` примеров.
+- Выбор сервера хранится в `localStorage` (`selectedServerId`) и общий для всех `auth-*` примеров.
 - При смене сервера активная сессия сбрасывается — токены привязаны к конкретному окружению.
 
 ## Структура
@@ -50,7 +50,7 @@ import { initServerSelect } from "../../shared/oauthStaticServers";
 examples/
   shared/
     oauthStaticServers.ts   # список серверов, applyOAuthLinks, initServerSelect
-via_credentials/
+email-password/
   manifest.json     # манифест UXP-плагина
   index.html        # UI панели (Spectrum Web Components)
   src/
@@ -63,7 +63,7 @@ via_credentials/
 ## Сборка
 
 ```bash
-cd examples/via_credentials
+cd examples/email-password
 npm install
 npm run build
 ```
