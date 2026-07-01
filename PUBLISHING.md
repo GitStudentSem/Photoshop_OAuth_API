@@ -55,7 +55,7 @@ always-auth=true
 
 ```json
 "publishConfig": {
-  "registry": "https://nexus.example.com/repository/npm-internal/"
+  "registry": "https://nexus.hz.labs.retouch4.me/repository/relu/"
 }
 ```
 

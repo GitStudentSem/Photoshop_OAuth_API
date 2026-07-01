@@ -5,7 +5,7 @@
   "main": "dist/OauthAPI.js",
   "types": "dist/OauthAPI.d.ts",
   "publishConfig": {
-    "registry": "https://nexus.example.com/repository/npm-internal/"
+    "registry": "https://nexus.hz.labs.retouch4.me/repository/relu/"
   },
   "files": [
     "dist"
