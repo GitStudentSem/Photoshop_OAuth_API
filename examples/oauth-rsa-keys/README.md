@@ -101,7 +101,7 @@ npm run dev
 
 ## Что заменить под свой проект
 
-- `productConfig` в `src/appInfo.ts` — `installationIdPrefix` (серверный `keyprefix`) и `licenseHashSalt` (серверный `keysalt`). Для Vectorscope: `R4VS` + `''`, для Waveform: `R4WF` + `waveform`.
+- `productConfig` в `src/appInfo.ts` — `installationIdPrefix` (серверный `keyprefix`) и `licenseHashSalt` (серверный `keysalt`). См. таблицу продуктов ниже.
 - `publicKey` в `src/appInfo.ts` (встройте ваш публичный ключ).
 - `client_id` / `programName` в OAuth-части.
 - Серверный endpoint выдачи лицензии (куда клиент отправляет `email + installationId`).
@@ -115,10 +115,10 @@ npm run dev
 
 В `getTimeStamp()` нужно вручную заменить под своё приложение:
 
-| Что | В примере (Vectorscope) | Для своего приложения |
-|-----|-------------------------|------------------------|
-| Папка в `ProgramData` / `Application Support` | `Vectorscope` | уникальное имя продукта, напр. `Waveform`, `MyPanel` |
-| Файл метки | `vectorscope_anchor.conf` | свой файл, напр. `waveform_anchor.conf` |
+| Что | Vectorscope | Waveform | WB Compass |
+|-----|-------------|----------|------------|
+| Папка в `ProgramData` / `Application Support` | `Vectorscope` | `Waveform` | `WBCompass` |
+| Файл метки | `vectorscope_anchor.conf` | `waveform_anchor.conf` | `wbcompass_anchor.conf` |
 
 ```typescript
 // generateDeviceId.ts — getTimeStamp()
@@ -127,9 +127,53 @@ vectorsopeFolder = await commonFolder.getEntry('Vectorscope');
 stampFile = await vectorsopeFolder.getEntry('vectorscope_anchor.conf');
 ```
 
-Для другого продукта замените обе строки на свои значения. Параметры CLI/конфига для этого не предусмотрены: задаётся один раз при форке примера. Разные приложения **не должны** делить одну папку и один anchor-файл — иначе `deviceId` может совпасть между продуктами на одной машине.
+Для другого продукта замените обе строки в `generateDeviceId.ts` на свои (см. таблицу выше). У разных продуктов должны быть **разные** папка и файл, иначе на одной машине возможен одинаковый `deviceId`.
 
 Подробнее: [`src/README.md`](./src/README.md).
+
+## Продукты Retouch4me
+
+Каждый продукт задаёт свои `installationIdPrefix` (`keyprefix` на сервере) и `licenseHashSalt` (`keysalt`). Оба значения нужно прописать в `productConfig` (`src/appInfo.ts`) на клиенте и передать при подписи на сервере — иначе `verifyLicenseKey` вернёт `false`.
+
+Полный список пресетов: [`../rsa-keygen/src/lib/products.ts`](../rsa-keygen/src/lib/products.ts).
+
+| Ключ (`--product`) | `client_id` (OAuth) | keyprefix | keysalt | Payload для hash (пример) |
+| --- | --- | --- | --- | --- |
+| `vectorscope` | `retouch4me_vectorscope_panel` | `R4VS` | `''` (пусто) | `ABCD-1234-XYZZY\|user@example.com` |
+| `waveform` | `retouch4me_waveform_panel` | `R4WF` | `waveform` | `GPIE-6439-SHITG\|user@example.comwaveform` |
+| `wbcompass` | `retouch4me_wbcompass_panel` | `R4WBC` | `wbcompass` | `GPIE-6439-SHITG\|user@example.comwbcompass` |
+
+RSA-пара может быть **общей** для нескольких продуктов — лицензии различаются за счёт префикса и соли.
+
+### Подпись на сервере (rsa-keygen)
+
+```bash
+cd examples/rsa-keygen
+
+# Vectorscope (по умолчанию)
+npm run keygen -- sign user@example.com R4VS-GPIE-6439-SHITG
+
+# Waveform
+npm run keygen -- sign user@example.com R4WF-GPIE-6439-SHITG --product waveform
+
+# WB Compass
+npm run keygen -- sign user@example.com R4WBC-GPIE-6439-SHITG --product wbcompass
+```
+
+`installationId` в команде должен совпадать с тем, что сформировал клиент (`<keyprefix>-<deviceId>`).
+
+### Настройка клиента (`appInfo.ts`)
+
+Пример для Waveform:
+
+```ts
+export const productConfig: LicenseProductConfig = {
+  installationIdPrefix: 'R4WF',
+  licenseHashSalt: 'waveform',
+};
+```
+
+Для другого продукта также замените `client_id` / `programName` в OAuth-части (`auth.ts`) и пути anchor-файла в `generateDeviceId.ts` (см. таблицу выше в разделе «Пути anchor-файла»).
 
 ## Формула лицензии
 

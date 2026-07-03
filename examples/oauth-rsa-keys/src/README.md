@@ -33,7 +33,26 @@
 4. `getLicenceKey()` — HMAC-сессия + `getOnlineRegistrationKey()` (на сервер уходит `email` + `installationId`)
 5. `verifyLicenseKey()` — проверка ключа публичным RSA-ключом с `productConfig` (`installationIdPrefix` + `licenseHashSalt`)
 
-Хеш: `SHA256(normalizedInstallationId + "|" + email + licenseHashSalt)`. Префикс и соль (`productConfig` в `appInfo.ts`) должны совпадать с серверной записью продукта (`keyprefix` / `keysalt`). Для Vectorscope соль пустая.
+Хеш: `SHA256(normalizedInstallationId + "|" + email + licenseHashSalt)`. Префикс и соль (`productConfig` в `appInfo.ts`) должны совпадать с серверной записью продукта (`keyprefix` / `keysalt`).
+
+## Продукты Retouch4me
+
+Пресеты из [`../../rsa-keygen/src/lib/products.ts`](../../rsa-keygen/src/lib/products.ts):
+
+| Ключ (`--product`) | `client_id` (OAuth) | keyprefix | keysalt | Payload для hash (пример) |
+| --- | --- | --- | --- | --- |
+| `vectorscope` | `retouch4me_vectorscope_panel` | `R4VS` | `''` (пусто) | `ABCD-1234-XYZZY\|user@example.com` |
+| `waveform` | `retouch4me_waveform_panel` | `R4WF` | `waveform` | `GPIE-6439-SHITG\|user@example.comwaveform` |
+| `wbcompass` | `retouch4me_wbcompass_panel` | `R4WBC` | `wbcompass` | `GPIE-6439-SHITG\|user@example.comwbcompass` |
+
+Подпись на сервере:
+
+```bash
+cd examples/rsa-keygen
+npm run keygen -- sign user@example.com R4WF-GPIE-6439-SHITG --product waveform
+```
+
+На клиенте — те же `installationIdPrefix` и `licenseHashSalt` в `productConfig` (`appInfo.ts`). RSA-пара может быть общей для всех продуктов.
 
 `getAuthLink()` в этом примере — локальная функция из `auth.ts`, а не метод npm-пакета.  
 В `@relu-ps/oauth-api` есть метод `getLink()`, но он использует client_id по умолчанию (`retouch4me_photoshop_panel`).
@@ -52,12 +71,17 @@
 
 `deviceId` не только из железа (hostname, CPU, память), но и из **временной метки**, которая при первом запуске пишется в файл и потом читается оттуда. Так метка стабильна между сессиями.
 
-В `getTimeStamp()` захардкожены пути **только для Vectorscope**:
+В `getTimeStamp()` захардкожены пути **только для Vectorscope** (для других продуктов — см. таблицу в корневом README):
 
-- папка: `Vectorscope` (в `C:/ProgramData/` на Windows или `~/Library/Application Support` на macOS);
-- файл: `vectorscope_anchor.conf`.
+| Продукт | Папка | Файл метки |
+|---------|-------|------------|
+| Vectorscope | `Vectorscope` | `vectorscope_anchor.conf` |
+| Waveform | `Waveform` | `waveform_anchor.conf` |
+| WB Compass | `WBCompass` | `wbcompass_anchor.conf` |
 
-Для другого приложения замените обе строки в `generateDeviceId.ts` на свои (например `Waveform` + `waveform_anchor.conf`). Это не параметры npm-пакета и не общие константы — настраивается один раз в коде вашего плагина. У разных продуктов должны быть **разные** папка и файл, иначе на одной машине возможен одинаковый `deviceId`.
+Пути на диске: `C:/ProgramData/` (Windows) или `~/Library/Application Support` (macOS).
+
+Для другого приложения замените обе строки в `generateDeviceId.ts` на значения из таблицы выше.
 
 ## Минимальный API контракт (клиент ↔ сервер)
 
