@@ -1,6 +1,6 @@
 {
   "name": "@relu-ps/oauth-api",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Пакет Авторизации для Photoshop плагинов",
   "main": "dist/OauthAPI.js",
   "types": "dist/OauthAPI.d.ts",
