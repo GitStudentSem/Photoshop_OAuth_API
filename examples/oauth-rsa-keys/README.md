@@ -105,8 +105,31 @@ npm run dev
 - `publicKey` в `src/appInfo.ts` (встройте ваш публичный ключ).
 - `client_id` / `programName` в OAuth-части.
 - Серверный endpoint выдачи лицензии (куда клиент отправляет `email + installationId`).
+- **Пути хранения anchor-метки для `deviceId`** в `src/generateDeviceId.ts` (функция `getTimeStamp`) — см. ниже.
 
 Соль и префикс должны совпадать с серверной записью продукта — иначе `verifyLicenseKey` вернёт `false`.
+
+### Пути anchor-файла (`generateDeviceId.ts`)
+
+Стабильный `deviceId` строится из fingerprint машины и **временной метки**, которая один раз записывается в файл на диске. В примере для Vectorscope зашиты **имена папки и файла** — это не общие константы для всех Retouch4me-приложений.
+
+В `getTimeStamp()` нужно вручную заменить под своё приложение:
+
+| Что | В примере (Vectorscope) | Для своего приложения |
+|-----|-------------------------|------------------------|
+| Папка в `ProgramData` / `Application Support` | `Vectorscope` | уникальное имя продукта, напр. `Waveform`, `MyPanel` |
+| Файл метки | `vectorscope_anchor.conf` | свой файл, напр. `waveform_anchor.conf` |
+
+```typescript
+// generateDeviceId.ts — getTimeStamp()
+vectorsopeFolder = await commonFolder.getEntry('Vectorscope');
+// ...
+stampFile = await vectorsopeFolder.getEntry('vectorscope_anchor.conf');
+```
+
+Для другого продукта замените обе строки на свои значения. Параметры CLI/конфига для этого не предусмотрены: задаётся один раз при форке примера. Разные приложения **не должны** делить одну папку и один anchor-файл — иначе `deviceId` может совпасть между продуктами на одной машине.
+
+Подробнее: [`src/README.md`](./src/README.md).
 
 ## Формула лицензии
 

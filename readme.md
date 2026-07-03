@@ -31,7 +31,7 @@
 
 1. Один раз сгенерируйте RSA-пару (`examples/rsa-keygen`, команда `generate`).
 2. Публичный ключ встройте в клиент, приватный ключ храните только на сервере.
-3. Клиент формирует `installationId = <APP_PREFIX>-<deviceId>`.
+3. Клиент формирует `installationId = <APP_PREFIX>-<deviceId>` (`deviceId` — в `oauth-rsa-keys`, включая anchor-файл на диске; имя папки/файла задаётся **под приложение**, см. [`examples/oauth-rsa-keys/README.md`](./examples/oauth-rsa-keys/README.md)).
 4. Клиент отправляет на сервер `email + installationId`.
 5. Сервер подписывает лицензию приватным ключом (`sign`) и возвращает `licenseKey`.
 6. Клиент проверяет подпись публичным ключом (`verifyLicenseKey`).

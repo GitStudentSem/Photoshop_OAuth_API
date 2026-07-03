@@ -95,7 +95,8 @@ _installationId = `${productConfig.installationIdPrefix}-${_deviceId}`;
 
 То есть:
 
-- сначала клиент получает стабильный `deviceId` (fingerprint железа),
+- сначала клиент получает стабильный `deviceId` через `generateDeviceId()` (fingerprint + anchor-файл на диске),
+- в `generateDeviceId.ts` для **своего** приложения нужно заменить имя папки и anchor-файла (в примере: `Vectorscope` / `vectorscope_anchor.conf` — только Vectorscope),
 - затем формирует `installationId` с префиксом приложения (`R4VS-...` для Vectorscope),
 - этот `installationId` отправляется на сервер для подписи лицензии.
 

@@ -6,10 +6,11 @@
 
 1. Сгенерируйте RSA-пару через `examples/rsa-keygen` (`generate`).
 2. Встройте `publicKey` в клиент (`appInfo.ts`), а `privateKey` храните только на сервере.
-3. В клиенте сформируйте `installationId` в формате `<APP_PREFIX>-<deviceId>`.
-4. Отправьте `email` + `installationId` на серверный endpoint выдачи лицензии.
-5. На сервере подпишите данные приватным ключом (`sign`) и верните `licenseKey`.
-6. В клиенте проверьте `licenseKey` публичным ключом (`verifyLicenseKey`).
+3. В `generateDeviceId.ts` задайте **свои** имя папки и anchor-файла для метки `deviceId` (в примере — `Vectorscope` / `vectorscope_anchor.conf`, только для Vectorscope).
+4. В клиенте сформируйте `installationId` в формате `<APP_PREFIX>-<deviceId>`.
+5. Отправьте `email` + `installationId` на серверный endpoint выдачи лицензии.
+6. На сервере подпишите данные приватным ключом (`sign`) и верните `licenseKey`.
+7. В клиенте проверьте `licenseKey` публичным ключом (`verifyLicenseKey`).
 
 `sign` — это серверная операция. Клиент UXP не должен иметь доступ к приватному ключу.
 
@@ -21,7 +22,7 @@
 | `rsa.ts` | RSA-256 верификация лицензии (публичный ключ) |
 | `UserStore.ts` | Состояние пользователя в localStorage |
 | `appInfo.ts` | deviceId, installationId (`R4VS-…`), `productConfig` (prefix+salt), publicKey |
-| `generateDeviceId.ts` | Стабильный deviceId по fingerprint машины |
+| `generateDeviceId.ts` | Стабильный `deviceId` (fingerprint + anchor-файл на диске); **имена папки/файла — под Vectorscope, для своего приложения менять вручную** |
 | `index.ts` | UI wiring |
 
 ## Flow
@@ -46,6 +47,17 @@
 | `privateKey` | Сервер / keygen-машина | Только `sign` (выдача лицензий) |
 | `publicKey` | Копия из keygen | Клиентская `verifyLicenseKey` |
 | `licenseKey` | Сервер (результат `sign`) | Клиентская верификация и активация |
+
+## Anchor-файл для `deviceId` (`generateDeviceId.ts`)
+
+`deviceId` не только из железа (hostname, CPU, память), но и из **временной метки**, которая при первом запуске пишется в файл и потом читается оттуда. Так метка стабильна между сессиями.
+
+В `getTimeStamp()` захардкожены пути **только для Vectorscope**:
+
+- папка: `Vectorscope` (в `C:/ProgramData/` на Windows или `~/Library/Application Support` на macOS);
+- файл: `vectorscope_anchor.conf`.
+
+Для другого приложения замените обе строки в `generateDeviceId.ts` на свои (например `Waveform` + `waveform_anchor.conf`). Это не параметры npm-пакета и не общие константы — настраивается один раз в коде вашего плагина. У разных продуктов должны быть **разные** папка и файл, иначе на одной машине возможен одинаковый `deviceId`.
 
 ## Минимальный API контракт (клиент ↔ сервер)
 
