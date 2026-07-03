@@ -38,6 +38,9 @@
 
 `installationId` не участвует в генерации RSA-пары: он используется только в `sign` / `verify`.
 
+Хеш лицензии: `SHA256(normalizedInstallationId + "|" + email + licenseHashSalt)`, где префикс (`keyprefix`)
+и соль (`keysalt`) задаются на продукт и должны совпадать на сервере и клиенте. Для Vectorscope соль пустая.
+
 ## Установка
 
 Пакет публикуется во внутренний Nexus-репозиторий. Настройте `.npmrc` (см. [PUBLISHING.md](./PUBLISHING.md)) и установите зависимость:

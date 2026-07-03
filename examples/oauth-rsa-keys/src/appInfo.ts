@@ -1,4 +1,17 @@
 import { generateDeviceId } from './generateDeviceId';
+import type { LicenseProductConfig } from './rsa';
+
+/**
+ * Per-product license configuration.
+ *
+ * `installationIdPrefix` (server `keyprefix`) and `licenseHashSalt`
+ * (server `keysalt`) must match the server product record. For a different
+ * product replace these values (e.g. Waveform: prefix `R4WF`, salt `waveform`).
+ */
+export const productConfig: LicenseProductConfig = {
+  installationIdPrefix: 'R4VS',
+  licenseHashSalt: '',
+};
 
 let _deviceId = '';
 let _installationId = '';
@@ -17,7 +30,7 @@ export const initAppInfo = async () => {
     _deviceId = await generateDeviceId();
   }
   if (!_installationId) {
-    _installationId = `R4VS-${_deviceId}`;
+    _installationId = `${productConfig.installationIdPrefix}-${_deviceId}`;
   }
 };
 

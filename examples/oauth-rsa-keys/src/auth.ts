@@ -3,7 +3,7 @@ import { shell } from 'uxp';
 import os from 'os';
 import OAuthAPI, { OAuthAPIError } from '@relu-ps/oauth-api';
 import UserStore from './UserStore';
-import { appInfo, initAppInfo, publicKey } from './appInfo';
+import { appInfo, initAppInfo, productConfig, publicKey } from './appInfo';
 import { ClientError } from './ClientError';
 import { verifyLicenseKey } from './rsa';
 
@@ -53,6 +53,7 @@ const verifyStoredLicenseKey = (): boolean => {
     appInfo.installationId,
     UserStore.licenseKey,
     publicKey,
+    productConfig,
   );
 };
 
@@ -183,6 +184,7 @@ export const getLicenceKey = async (): Promise<void> => {
     appInfo.installationId,
     licenseKey,
     publicKey,
+    productConfig,
   );
 
   if (!isValid) {

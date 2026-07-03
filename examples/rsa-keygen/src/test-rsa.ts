@@ -7,14 +7,22 @@ import {
   generateKeyPair,
   readPrivateKeyFile,
   readPublicKeyFile,
+  resolveProduct,
   saveKeyPair,
   signLicenseKey,
   verifyLicenseKey,
+  type LicenseProductConfig,
 } from './index.js';
 import { keyFilePaths } from './lib/paths.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEST_KEYS_DIR = path.resolve(__dirname, '../keys/test-run');
+
+// Same RSA pair is shared across products; licenses differ via prefix + salt.
+const TEST_PRODUCTS: { name: string; config: LicenseProductConfig }[] = [
+  { name: 'vectorscope', config: resolveProduct('vectorscope') },
+  { name: 'waveform', config: resolveProduct('waveform') },
+];
 
 function randomEmail(): string {
   const names = ['alice', 'bob', 'user', 'test', 'admin', 'dev'];
@@ -25,11 +33,11 @@ function randomEmail(): string {
   return `${name}${num}@${domain}`;
 }
 
-function randomInstallationId(): string {
+function randomInstallationId(prefix: string): string {
   const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const part = (len: number) =>
     Array.from({ length: len }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  return `R4VS-${part(4)}-${part(4)}-${part(5)}`;
+  return `${prefix}-${part(4)}-${part(4)}-${part(5)}`;
 }
 
 function ensureTestKeys() {
@@ -42,7 +50,7 @@ function ensureTestKeys() {
 
 const iterations = Number.parseInt(process.argv[2] || '100', 10);
 
-console.log(`\nRSA-256 test: ${iterations} iterations\n`);
+console.log(`\nRSA-256 test: ${iterations} iterations per product\n`);
 
 ensureTestKeys();
 const privateKey = readPrivateKeyFile(keyFilePaths(TEST_KEYS_DIR).privatePath);
@@ -53,47 +61,65 @@ let failed = 0;
 let falsePositives = 0;
 const start = Date.now();
 
-for (let i = 0; i < iterations; i++) {
-  const email = randomEmail();
-  const installId = randomInstallationId();
+for (const { name, config } of TEST_PRODUCTS) {
+  console.log(
+    `\n[${name}] prefix=${config.installationIdPrefix} salt="${config.licenseHashSalt}"`,
+  );
 
-  const { signature: licenseKey } = signLicenseKey(email, installId, privateKey);
+  for (let i = 0; i < iterations; i++) {
+    const email = randomEmail();
+    const installId = randomInstallationId(config.installationIdPrefix);
 
-  if (!verifyLicenseKey(email, installId, licenseKey, publicKey)) {
-    failed++;
-    console.error(`  FAIL #${i + 1} valid key rejected: ${email} ${installId}`);
-    continue;
+    const { signature: licenseKey } = signLicenseKey(email, installId, privateKey, config);
+
+    if (!verifyLicenseKey(email, installId, licenseKey, publicKey, config)) {
+      failed++;
+      console.error(`  FAIL #${i + 1} valid key rejected: ${email} ${installId}`);
+      continue;
+    }
+
+    if (verifyLicenseKey(`${email}.wrong`, installId, licenseKey, publicKey, config)) {
+      falsePositives++;
+      console.error(`  FALSE POSITIVE #${i + 1} wrong email accepted`);
+      continue;
+    }
+
+    if (verifyLicenseKey(email, `${installId}-X`, licenseKey, publicKey, config)) {
+      falsePositives++;
+      console.error(`  FALSE POSITIVE #${i + 1} wrong installationId accepted`);
+      continue;
+    }
+
+    passed++;
+
+    if ((i + 1) % Math.max(1, Math.floor(iterations / 10)) === 0) {
+      console.log(`  ${i + 1}/${iterations} ...`);
+    }
   }
+}
 
-  if (verifyLicenseKey(`${email}.wrong`, installId, licenseKey, publicKey)) {
-    falsePositives++;
-    console.error(`  FALSE POSITIVE #${i + 1} wrong email accepted`);
-    continue;
-  }
-
-  if (verifyLicenseKey(email, `${installId}-X`, licenseKey, publicKey)) {
-    falsePositives++;
-    console.error(`  FALSE POSITIVE #${i + 1} wrong installationId accepted`);
-    continue;
-  }
-
+// Cross-product isolation: a key signed for one product must not verify for another.
+const crossEmail = randomEmail();
+const vs = TEST_PRODUCTS[0].config;
+const wf = TEST_PRODUCTS[1].config;
+const vsInstall = randomInstallationId(vs.installationIdPrefix);
+const { signature: vsKey } = signLicenseKey(crossEmail, vsInstall, privateKey, vs);
+const wfInstall = `${wf.installationIdPrefix}-${vsInstall.slice(vs.installationIdPrefix.length + 1)}`;
+if (verifyLicenseKey(crossEmail, wfInstall, vsKey, publicKey, wf)) {
+  falsePositives++;
+  console.error('  FALSE POSITIVE cross-product key accepted (salt/prefix ignored)');
+} else {
   passed++;
-
-  if ((i + 1) % Math.max(1, Math.floor(iterations / 10)) === 0) {
-    console.log(`  ${i + 1}/${iterations} ...`);
-  }
+  console.log('\n[cross-product] different salt/prefix → key correctly rejected');
 }
 
 const elapsed = Date.now() - start;
 
 console.log(`\n${'='.repeat(50)}`);
-console.log(`  Total:           ${iterations}`);
 console.log(`  Passed:          ${passed}`);
 console.log(`  Failed:          ${failed}`);
 console.log(`  False positives: ${falsePositives}`);
-console.log(
-  `  Time:            ${elapsed} ms (${(elapsed / iterations).toFixed(1)} ms/iter)`,
-);
+console.log(`  Time:            ${elapsed} ms`);
 console.log(`${'='.repeat(50)}`);
 
 if (failed === 0 && falsePositives === 0) {

@@ -20,7 +20,7 @@
 | `auth.ts` | OAuth flow, polling, получение и проверка ключа |
 | `rsa.ts` | RSA-256 верификация лицензии (публичный ключ) |
 | `UserStore.ts` | Состояние пользователя в localStorage |
-| `appInfo.ts` | deviceId, installationId (`R4VS-…`), publicKey |
+| `appInfo.ts` | deviceId, installationId (`R4VS-…`), `productConfig` (prefix+salt), publicKey |
 | `generateDeviceId.ts` | Стабильный deviceId по fingerprint машины |
 | `index.ts` | UI wiring |
 
@@ -30,7 +30,9 @@
 2. `getToken()` — polling каждые 3s (404 = ждём)
 3. `getProfile()` — `UserStore.login()`
 4. `getLicenceKey()` — HMAC-сессия + `getOnlineRegistrationKey()` (на сервер уходит `email` + `installationId`)
-5. `verifyLicenseKey()` — проверка ключа публичным RSA-ключом
+5. `verifyLicenseKey()` — проверка ключа публичным RSA-ключом с `productConfig` (`installationIdPrefix` + `licenseHashSalt`)
+
+Хеш: `SHA256(normalizedInstallationId + "|" + email + licenseHashSalt)`. Префикс и соль (`productConfig` в `appInfo.ts`) должны совпадать с серверной записью продукта (`keyprefix` / `keysalt`). Для Vectorscope соль пустая.
 
 `getAuthLink()` в этом примере — локальная функция из `auth.ts`, а не метод npm-пакета.  
 В `@relu-ps/oauth-api` есть метод `getLink()`, но он использует client_id по умолчанию (`retouch4me_photoshop_panel`).

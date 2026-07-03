@@ -5,3 +5,5 @@ dist/
 .npmrc
 *.tgz
 docs/
+# Never commit RSA private/public keys
+*.pem

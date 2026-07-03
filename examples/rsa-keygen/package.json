@@ -11,6 +11,7 @@
     "build": "tsc",
     "keygen": "npm run build && node dist/cli.js",
     "test:rsa": "npm run build && node dist/test-rsa.js",
+    "test:server": "npm run build && node dist/test-server-fixtures.js",
     "dev": "tsx src/cli.ts"
   },
   "devDependencies": {

@@ -21,6 +21,14 @@ export {
   normalizeInstallationId,
   signLicenseKey,
   verifyLicenseKey,
+  DEFAULT_LICENSE_PRODUCT_CONFIG,
+  type LicenseProductConfig,
   type SignResult,
 } from './lib/license.js';
+export {
+  PRODUCTS,
+  DEFAULT_PRODUCT_KEY,
+  resolveProduct,
+  type Product,
+} from './lib/products.js';
 export { DEFAULT_KEYS_DIR, keyFilePaths, resolveKeysDir } from './lib/paths.js';

@@ -101,10 +101,24 @@ npm run dev
 
 ## Что заменить под свой проект
 
-- Префикс `installationId` в `src/appInfo.ts` (вместо `R4VS` используйте свой).
+- `productConfig` в `src/appInfo.ts` — `installationIdPrefix` (серверный `keyprefix`) и `licenseHashSalt` (серверный `keysalt`). Для Vectorscope: `R4VS` + `''`, для Waveform: `R4WF` + `waveform`.
 - `publicKey` в `src/appInfo.ts` (встройте ваш публичный ключ).
 - `client_id` / `programName` в OAuth-части.
 - Серверный endpoint выдачи лицензии (куда клиент отправляет `email + installationId`).
+
+Соль и префикс должны совпадать с серверной записью продукта — иначе `verifyLicenseKey` вернёт `false`.
+
+## Формула лицензии
+
+```
+hash = SHA256(normalizedInstallationId + "|" + email + licenseHashSalt)
+```
+
+- `normalizedInstallationId` — `installationId` без префикса `<installationIdPrefix>-`.
+- Соль приклеивается к `email` без разделителя `|` (для Vectorscope соль пустая).
+- Подпись/проверка — RSA-256 (`hash^d mod n` / `hash^e mod n`), кодирование — Base41 (Niobium).
+
+Детали генерации ключей и подписи: [`../rsa-keygen/README.md`](../rsa-keygen/README.md).
 
 ## Важный момент про безопасность
 

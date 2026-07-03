@@ -82,8 +82,39 @@ export function parsePublicKeyPem(pem: string): { n: bigint; e: bigint } {
   return { n, e };
 }
 
-function createHash256(email: string, installationId: string): Uint8Array {
-  const data = `${installationId}|${email}`;
+/**
+ * Per-product licensing configuration.
+ *
+ * Both fields come from the server product record (`keyprefix` / `keysalt`)
+ * and must match the server side that signs the license.
+ */
+export interface LicenseProductConfig {
+  /** installationId prefix stripped before hashing, e.g. `R4VS`. */
+  installationIdPrefix: string;
+  /** Salt appended to the hash payload, e.g. `''` (Vectorscope) or `waveform`. */
+  licenseHashSalt: string;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function normalizeInstallationId(installationId: string, prefix: string): string {
+  if (!prefix) return installationId;
+  return installationId.replace(new RegExp(`^${escapeRegExp(prefix)}-`), '');
+}
+
+/**
+ * Builds the license hash: `SHA256(normalizedInstallationId + "|" + email + salt)`.
+ * The salt is appended directly to `email` (no `|` separator).
+ */
+function createHash256(
+  email: string,
+  installationId: string,
+  config: LicenseProductConfig,
+): Uint8Array {
+  const normalizedId = normalizeInstallationId(installationId, config.installationIdPrefix);
+  const data = `${normalizedId}|${email}${config.licenseHashSalt}`;
   const md = forge.md.sha256.create();
   md.update(data, 'utf8');
   const fullHash = md.digest().toHex();
@@ -99,12 +130,13 @@ export function verifyLicenseKey(
   installationId: string,
   licenseKeyBase41: string,
   publicKeyPem: string,
+  config: LicenseProductConfig,
 ): boolean {
   const { n, e } = parsePublicKeyPem(publicKeyPem);
   const signatureBytes = stringNiobiumToBuffer(licenseKeyBase41);
   const signatureBigInt = uint8ArrayToBigInt(signatureBytes);
   const decrypted = modPow(signatureBigInt, e, n);
-  const hashBytes = createHash256(email, installationId.replace('R4VS-', ''));
+  const hashBytes = createHash256(email, installationId, config);
   const hashBigInt = uint8ArrayToBigInt(hashBytes);
   const hashMod = hashBigInt % n;
   return decrypted === hashMod;

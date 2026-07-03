@@ -7,13 +7,23 @@ import {
   readPrivateKeyFile,
   readPublicKeyFile,
   resolveKeysDir,
+  resolveProduct,
   saveKeyPair,
   signLicenseKey,
   verifyLicenseKey,
+  PRODUCTS,
+  type LicenseProductConfig,
 } from './index.js';
 import { keyFilePaths } from './lib/paths.js';
 
 function printHelp() {
+  const productList = Object.entries(PRODUCTS)
+    .map(
+      ([key, p]) =>
+        `      ${key} (prefix ${p.installationIdPrefix}, salt "${p.licenseHashSalt}")`,
+    )
+    .join('\n');
+
   console.log(`
 RSA-256 License Key Generator
 
@@ -24,42 +34,87 @@ Commands:
   export-public [--keys <dir>]         Print publicKey snippet for appInfo.ts
 
 Options:
-  --keys <dir>   Keys directory (default: ./keys)
+  --keys <dir>       Keys directory (default: ./keys)
+  --product <name>   Product preset (prefix + salt). Default: vectorscope
+  --prefix <prefix>  Override installationId prefix (e.g. R4VS)
+  --salt <salt>      Override license hash salt (e.g. "" or waveform)
+
+Products:
+${productList}
 
 Examples:
   npm run keygen -- generate
   npm run keygen -- sign user@example.com R4VS-ABCD-1234-XYZZY
+  npm run keygen -- sign user@example.com R4WF-GPIE-6439-SHITG --product waveform
   npm run keygen -- verify user@example.com R4VS-ABCD-1234-XYZZY ABC123...
   npm run keygen -- export-public
+
+Hash payload:
+  SHA256(normalizedInstallationId + "|" + email + salt)
+  - normalizedInstallationId = installationId without "<prefix>-"
+  - salt is appended directly to email (no "|" separator)
 
 Notes:
   - Public key goes into the client app (e.g. appInfo.ts)
   - Private key stays on the server / keygen machine only
-  - installationId may include or omit the "R4VS-" prefix
+  - installationId may include or omit the "<prefix>-" prefix
 `);
 }
 
-function parseArgs(argv: string[]) {
-  const keysFlagIndex = argv.indexOf('--keys');
+interface ParsedArgs {
+  command: string | undefined;
+  args: string[];
+  keysDir: string;
+  product: LicenseProductConfig;
+}
+
+function parseArgs(argv: string[]): ParsedArgs {
   let keysDir: string | undefined;
+  let productName: string | undefined;
+  let prefixOverride: string | undefined;
+  let saltOverride: string | undefined;
   const positional: string[] = [];
 
+  const valueFlags: Record<string, (v: string) => void> = {
+    '--keys': (v) => {
+      keysDir = v;
+    },
+    '--product': (v) => {
+      productName = v;
+    },
+    '--prefix': (v) => {
+      prefixOverride = v;
+    },
+    '--salt': (v) => {
+      saltOverride = v;
+    },
+  };
+
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i] === '--keys') {
-      keysDir = argv[i + 1];
+    const arg = argv[i];
+    const handler = valueFlags[arg];
+    if (handler) {
+      handler(argv[i + 1] ?? '');
       i++;
       continue;
     }
-    if (argv[i].startsWith('--')) {
-      throw new Error(`Unknown option: ${argv[i]}`);
+    if (arg.startsWith('--')) {
+      throw new Error(`Unknown option: ${arg}`);
     }
-    positional.push(argv[i]);
+    positional.push(arg);
   }
+
+  const base = resolveProduct(productName);
+  const product: LicenseProductConfig = {
+    installationIdPrefix: prefixOverride ?? base.installationIdPrefix,
+    licenseHashSalt: saltOverride ?? base.licenseHashSalt,
+  };
 
   return {
     command: positional[0],
     args: positional.slice(1),
     keysDir: resolveKeysDir(keysDir),
+    product,
   };
 }
 
@@ -73,7 +128,7 @@ function ensureKeysExist(keysDir: string) {
 }
 
 async function main() {
-  const { command, args, keysDir } = parseArgs(process.argv.slice(2));
+  const { command, args, keysDir, product } = parseArgs(process.argv.slice(2));
 
   switch (command) {
     case 'generate': {
@@ -104,11 +159,13 @@ async function main() {
       }
       ensureKeysExist(keysDir);
       const privateKey = readPrivateKeyFile(keyFilePaths(keysDir).privatePath);
-      const result = signLicenseKey(args[0], args[1], privateKey);
+      const result = signLicenseKey(args[0], args[1], privateKey, product);
 
       console.log('\n=== Sign result ===');
       console.log(`Email:           ${args[0]}`);
       console.log(`Installation ID: ${args[1]}`);
+      console.log(`Prefix:          ${product.installationIdPrefix}`);
+      console.log(`Salt:            "${product.licenseHashSalt}"`);
       console.log(`Hash (hex):      ${result.hashHex}`);
       console.log(`Signature (hex): ${result.signatureHex}`);
       console.log('\nLicense key (Base41):');
@@ -125,7 +182,7 @@ async function main() {
       }
       ensureKeysExist(keysDir);
       const publicKey = readPublicKeyFile(keyFilePaths(keysDir).publicPath);
-      const isValid = verifyLicenseKey(args[0], args[1], args[2], publicKey);
+      const isValid = verifyLicenseKey(args[0], args[1], args[2], publicKey, product);
       console.log(isValid ? '\nSignature is VALID' : '\nSignature is INVALID');
       process.exit(isValid ? 0 : 1);
     }

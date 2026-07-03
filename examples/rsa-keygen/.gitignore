@@ -1,5 +1,6 @@
 node_modules/
 dist/
-keys/*.pem
+# Ignore all RSA keys anywhere (root keys/, keys/demo, keys/test-run, ...)
+*.pem
 keys/*.txt
 *.log
