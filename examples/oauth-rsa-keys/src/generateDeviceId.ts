@@ -187,21 +187,11 @@ export async function generateDeviceId(useLogs = false) {
   const stableDate = await getTimeStamp(username, useLogs);
   const networkId = getNetworkId(useLogs);
 
-  console.log({
-    username,
-    platform,
-    hostname,
-    cpuModel,
-    memory,
-    stableDate,
-    networkId,
-  });
   const rawFingerprint = `${username}|${platform}|${hostname}|${cpuModel}|${memory}|${stableDate}|${networkId}`;
 
   const md = forge.md.sha256.create();
   md.update(rawFingerprint, 'utf8');
   const hash = md.digest().toHex();
-  console.log('hash', hash);
   const deviceId = getDeviceIdFromHash(hash);
 
   return deviceId;
