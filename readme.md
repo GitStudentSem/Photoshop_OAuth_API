@@ -9,12 +9,13 @@
 1. Прочитайте этот README (базовый OAuth API и методы).
 2. Запустите один из примеров из `examples/` (ниже есть карта примеров).
 3. Для RSA-лицензирования отдельно пройдите `examples/rsa-keygen/README.md` и `examples/oauth-rsa-keys/src/README.md`.
+4. **Встраиваете авторизацию в свой плагин без опыта в коде?** — [`examples/oauth-rsa-keys/INTEGRATION_CHECKLIST.md`](./examples/oauth-rsa-keys/INTEGRATION_CHECKLIST.md) (чеклист для нейросети, типичные ошибки, отладка).
 
 ## Какой пример выбрать
 
 - `examples/oauth-browser` — классический OAuth PKCE через браузер.
 - `examples/email-password` — вход по email/паролю.
-- `examples/oauth-rsa-keys` — OAuth + проверка license key по RSA.
+- `examples/oauth-rsa-keys` — OAuth + проверка license key по RSA. Чеклист для интеграции: [`INTEGRATION_CHECKLIST.md`](./examples/oauth-rsa-keys/INTEGRATION_CHECKLIST.md).
 - `examples/rsa-keygen` — генерация RSA-ключей и подпись лицензий (серверная часть).
 - `examples/shared` — общий модуль переключения серверов для примеров.
 

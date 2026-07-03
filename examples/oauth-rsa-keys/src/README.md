@@ -2,6 +2,8 @@
 
 Минимальный UXP-пример авторизации в стиле Vectorscope: OAuth PKCE + получение лицензионного ключа + RSA-верификация.
 
+> **Интеграция через нейросеть / без опыта в коде:** см. **[INTEGRATION_CHECKLIST.md](../INTEGRATION_CHECKLIST.md)** — чеклист, промпт для AI, отладка логов `[LICENSE]`.
+
 ## Быстрый onboarding (для своего приложения)
 
 1. Сгенерируйте RSA-пару через `examples/rsa-keygen` (`generate`).
@@ -113,6 +115,10 @@ POST /api/license/sign
   На сервере (или keygen-машине), где хранится приватный ключ.
 - Что хранится в клиенте?  
   `publicKey`, `deviceId`, `installationId`, полученный `licenseKey`.
+- Куда смотреть, если «недействительная подпись»?  
+  [INTEGRATION_CHECKLIST.md](../INTEGRATION_CHECKLIST.md) — раздел «Отладка» и таблица «7 мест в коде».
+- Какой код брать за основу?  
+  Файлы в этой папке (`auth.ts`, `rsa.ts`, `appInfo.ts`, `generateDeviceId.ts`) — эталон для переноса в свой плагин.
 
 ## Важно
 
