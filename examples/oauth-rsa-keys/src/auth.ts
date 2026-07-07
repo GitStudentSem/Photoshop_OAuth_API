@@ -1,12 +1,12 @@
-import CryptoJS from "crypto-js";
-import { shell } from "uxp";
-import os from "os";
 import OAuthAPI, { OAuthAPIError } from "@relu-ps/oauth-api";
-import { applicationName } from "./applicationName";
-import UserStore from "./UserStore";
+import CryptoJS from "crypto-js";
+import os from "os";
+import { shell } from "uxp";
 import { appInfo, initAppInfo, productConfig, publicKey } from "./appInfo";
+import { applicationName } from "./applicationName";
 import { ClientError } from "./ClientError";
 import { verifyLicenseKey } from "./rsa";
+import UserStore from "./UserStore";
 
 export const oauth = new OAuthAPI();
 
