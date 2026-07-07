@@ -108,7 +108,12 @@ export const getRetouchToken = async (): Promise<void> => {
 
   const email = localStorage.getItem("userEmail");
 
-  if (!email || email === "null" || email === "undefined" || email === "false") {
+  if (
+    !email ||
+    email === "null" ||
+    email === "undefined" ||
+    email === "false"
+  ) {
     UserStore.logout();
     throw new Error("Email was not found.");
   }
@@ -160,10 +165,6 @@ export const loginViaEmailPassword = async (
     deviceid,
     application: APPLICATION,
   });
-
-  if (!result.loggedin) {
-    throw new Error("Login via email password failed");
-  }
 
   setEmailPasswordAuth(result.session);
   UserStore.login(result.mail, `${result.firstname} ${result.lastname}`);

@@ -378,6 +378,13 @@ export default class OauthAPI {
 
       if (response.ok) {
         const result: LoginViaEmailPasswordDataType = await response.json();
+        if (!result.loggedin) {
+          throw new OAuthAPIError({
+            message: "Login via email password failed",
+            status: 0,
+            methodName,
+          });
+        }
         return result;
       }
 
@@ -474,7 +481,7 @@ export default class OauthAPI {
       }
 
       // Пытаемся распарсить JSON
-      let json;
+      let result: GetOnlineRegistrationKeyDataType;
       try {
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
@@ -484,7 +491,7 @@ export default class OauthAPI {
             methodName,
           });
         }
-        json = JSON.parse(jsonMatch[0]);
+        result = JSON.parse(jsonMatch[0]);
       } catch (e) {
         if (e instanceof OAuthAPIError) {
           throw e;
@@ -496,15 +503,6 @@ export default class OauthAPI {
         });
       }
 
-      const result: GetOnlineRegistrationKeyDataType = {
-        error: json.error,
-        errorMsg: json.errormsg || "",
-        key: json.key || "",
-        keysleft: json.keysleft || 0,
-        keylimit: json.keylimit || 0,
-        keycount: json.keyscount || 0,
-      };
-
       if (result.error === "WEBAPIERROR_SESSION_INVALID") {
         throw new OAuthAPIError({
           message: "Session is invalid",
@@ -513,7 +511,7 @@ export default class OauthAPI {
         });
       }
       const noKeysLeft = result.keysleft === 0 && !result.key;
-      const keysLmit = result.keylimit === result.keycount && !result.key;
+      const keysLmit = result.keylimit === result.keyscount && !result.key;
       if (noKeysLeft || keysLmit) {
         throw new OAuthAPIError({
           message: "No keys left",

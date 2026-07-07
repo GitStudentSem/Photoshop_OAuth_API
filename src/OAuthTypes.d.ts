@@ -167,7 +167,7 @@ export type GetOnlineRegistrationKeyDataType = {
   /** Backend error code string. */
   error: string;
   /** Backend error message. */
-  errorMsg: string;
+  errormsg: string;
   /** License key string when available. */
   key: string;
   /** Remaining keys count. */
@@ -175,7 +175,7 @@ export type GetOnlineRegistrationKeyDataType = {
   /** Maximum keys limit. */
   keylimit: number;
   /** Already used keys count. */
-  keycount: number;
+  keyscount: number;
 };
 
 /**
