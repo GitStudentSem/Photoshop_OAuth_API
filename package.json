@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/GitStudentSem/Photoshop_OAuth_API#readme",
   "devDependencies": {
+    "@biomejs/biome": "^2.5.0",
     "terser": "^5.46.2",
     "typedoc": "^0.28.19",
     "typescript": "^6.0.3"
