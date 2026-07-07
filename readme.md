@@ -24,7 +24,7 @@
 ### OAuth без RSA
 
 1. Клиент генерирует `deviceId` и PKCE (`codeVerifier` / `codeChallenge`).
-2. Клиент открывает ссылку авторизации (`getLink` / `getAuthLink`) во внешнем браузере.
+2. Клиент открывает ссылку авторизации (`getLink`) во внешнем браузере.
 3. Клиент polling-ом ждёт `getToken`.
 4. Клиент получает профиль (`getProfile`) и рабочий токен (`getRetouchToken`).
 
@@ -56,9 +56,15 @@ npm install @relu-ps/oauth-api
 import OauthAPI, { OAuthAPIError } from "@relu-ps/oauth-api";
 
 const oauth = new OauthAPI();
+const applicationName = "retouch4me_photoshop_panel"; // client_id вашего продукта
 
 // 1. Сформировать ссылку для авторизации в браузере (PKCE)
-const link = oauth.getLink(deviceId, codeVerifier, codeChallenge);
+const link = oauth.getLink(
+  deviceId,
+  codeVerifier,
+  codeChallenge,
+  applicationName,
+);
 
 try {
   // 2. После того как пользователь авторизовался — получить токен
@@ -87,7 +93,7 @@ try {
 new OauthAPI()
 ```
 
-Создаёт экземпляр с production endpoint URL. Ошибки API не логируются внутри библиотеки — публичные методы бросают `OAuthAPIError`, обработку и логирование выполняет вызывающий код.
+Создаёт экземпляр с production endpoint URL. URL endpoint-ов не доступны снаружи — используйте методы API (`getLink`, `getToken` и т.д.) или `setBaseUrl` / `setFullUrl` для смены окружения. Ошибки API не логируются внутри библиотеки — публичные методы бросают `OAuthAPIError`, обработку и логирование выполняет вызывающий код.
 
 ### Ошибки
 
@@ -109,7 +115,7 @@ try {
 
 | Метод | Описание |
 | --- | --- |
-| `getLink(deviceId, codeVerifier, codeChallenge)` | URL для открытия в браузере и старта OAuth (PKCE, client `retouch4me_photoshop_panel`) |
+| `getLink(deviceId, codeVerifier, codeChallenge, application)` | URL для открытия в браузере и старта OAuth (PKCE). `application` — `client_id` вашего продукта |
 | `getToken(codeVerifier)` | Получение access token по code verifier |
 | `getProfile(tokenType, token)` | Профиль пользователя по OAuth-токену |
 | `getRetouchToken(email, session, deviceId, application)` | Retouch-токен и остаток ретушей |

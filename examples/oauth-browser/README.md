@@ -107,7 +107,7 @@ npm run dev
 
 ## Что заменить под свой проект
 
-- `client_id` / `programName` (если используете кастомный `getAuthLink`).
+- `applicationName` в `src/applicationName.ts` — единое имя продукта для `getLink`, `getRetouchToken` и других методов.
 - Правила формирования `deviceId` (если требуется другой fingerprint).
 - Логику сохранения пользователя (`UserStore`) под вашу модель данных.
 - Набор серверов в `examples/shared/oauthStaticServers.ts` (если нужны свои endpoint-ы).

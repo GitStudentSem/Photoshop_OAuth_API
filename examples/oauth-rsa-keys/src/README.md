@@ -29,7 +29,7 @@
 
 ## Flow
 
-1. `onAuth()` — PKCE + `getAuthLink()` + `shell.openExternal()`
+1. `onAuth()` — PKCE + `getLink()` + `shell.openExternal()`
 2. `getToken()` — polling каждые 3s (404 = ждём)
 3. `getProfile()` — `UserStore.login()`
 4. `getLicenceKey()` — HMAC-сессия + `getOnlineRegistrationKey()` (на сервер уходит `email` + `installationId`)
@@ -56,8 +56,7 @@ npm run keygen -- sign user@example.com R4WF-GPIE-6439-SHITG --product waveform
 
 На клиенте — те же `installationIdPrefix` и `licenseHashSalt` в `productConfig` (`appInfo.ts`). RSA-пара может быть общей для всех продуктов.
 
-`getAuthLink()` в этом примере — локальная функция из `auth.ts`, а не метод npm-пакета.  
-В `@relu-ps/oauth-api` есть метод `getLink()`, но он использует client_id по умолчанию (`retouch4me_photoshop_panel`).
+`getLink()` требует `application` (client_id) четвёртым аргументом — в примере это `applicationName` из `src/applicationName.ts`.
 
 ## Что откуда берётся
 
@@ -122,6 +121,6 @@ POST /api/license/sign
 
 ## Важно
 
-- `client_id` / `programName`: `retouch4me_vectorscope_panel` (как в vectorscope, не `retouch4me_photoshop_panel` из npm по умолчанию)
-- Ссылка авторизации строится через локальный `getAuthLink()` из `auth.ts`, т.к. `oauth.getLink()` из npm-пакета использует другой `client_id`
+- `applicationName` в `src/applicationName.ts` — единый `client_id` / `programName` для `getLink`, `getOnlineRegistrationKey` и других методов
+- Ссылка авторизации строится через `oauth.getLink(..., applicationName)`
 - Генерация RSA-ключей и подпись лицензий: см. [`../rsa-keygen`](../rsa-keygen)

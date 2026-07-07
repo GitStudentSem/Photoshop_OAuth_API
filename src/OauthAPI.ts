@@ -84,25 +84,25 @@ export default class OauthAPI {
    */
 
   /** Authorization start link. */
-  authorizeLink: string;
+  private authorizeLink: string;
 
   /** Link where the response will be sent. */
-  redirectLink: string;
+  private redirectLink: string;
 
   /** Link to obtain a token. */
-  tokenByCodeVerifierLink: string;
+  private tokenByCodeVerifierLink: string;
 
   /** Link to get the user profile. */
-  getProfileLink: string;
+  private getProfileLink: string;
 
   /** Link for getting a retouch token. */
-  getRetouchTokenLink: string;
+  private getRetouchTokenLink: string;
 
   /** Link for getting a retouch token without the user's email. */
-  getRetouchTokenWithoutEmailLink: string;
+  private getRetouchTokenWithoutEmailLink: string;
 
   /** Link for login via email and password. */
-  loginViaEmailPasswordLink: string;
+  private loginViaEmailPasswordLink: string;
 
   /**
    * Creates a new OauthAPI instance with default production endpoints.
@@ -173,7 +173,7 @@ export default class OauthAPI {
    * @example
    * ```ts
    * const oauth = new OauthAPI();
-   * const link = oauth.getLink("device-id", "verifier", "challenge");
+   * const link = oauth.getLink("device-id", "verifier", "challenge", "retouch4me_photoshop_panel");
    * ```
    * @remarks This method only generates a URL and does not perform network requests.
    * @see https://docs.google.com/document/d1gX_YwTV0v1hI2-shIlj_Fdk23P9S1Dz8B3wZvjLlIBw/edit.

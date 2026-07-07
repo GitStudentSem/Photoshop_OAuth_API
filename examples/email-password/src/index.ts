@@ -1,6 +1,7 @@
 import CryptoJS from "crypto-js";
 import OauthAPI, { OAuthAPIError } from "@relu-ps/oauth-api";
 import { initServerSelect } from "../../shared/oauthStaticServers";
+import { applicationName } from "./applicationName";
 import UserStore from "./UserStore";
 
 const catchError = (
@@ -50,8 +51,6 @@ const checkInternetConnection = (actionName: string) => {
 
 export const oauth: OauthAPI = new OauthAPI();
 const FILE_NAME = "auth";
-
-const APPLICATION = "retouch4me_photoshop_panel";
 
 const ONLINE_LUT_STORAGE_HMAC_KEY =
   "uizcmdZk0bCJYqPYREw9r2GYPups4IhGMc4mSeCgrv2S74lsYd+W3TQaTW+XDbkZ0B/rzy4+8foTLyGWU9SQJA";
@@ -128,7 +127,7 @@ export const getRetouchToken = async (): Promise<void> => {
       email,
       generateRetouchSession(authSession),
       localStorage.getItem("deviceid") || "",
-      APPLICATION,
+      applicationName,
     );
 
     UserStore.setRemainingRetouch(tokenData.remaining.professional);
@@ -163,7 +162,7 @@ export const loginViaEmailPassword = async (
     email,
     password,
     deviceid,
-    application: APPLICATION,
+    application: applicationName,
   });
 
   setEmailPasswordAuth(result.session);

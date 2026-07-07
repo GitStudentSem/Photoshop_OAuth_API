@@ -102,7 +102,7 @@ npm run dev
 
 ## Что заменить под свой проект
 
-- Имя приложения (`application` / `programName`) в запросах к API.
+- `applicationName` в `src/applicationName.ts` — единое имя продукта для `loginViaEmailPassword`, `getRetouchToken` и других методов.
 - Логику хранения сессии (`UserStore`) и срок жизни токенов.
 - Конфигурацию окружений в `examples/shared/oauthStaticServers.ts`.
 - UI-валидацию email/пароля и обработку пользовательских ошибок.

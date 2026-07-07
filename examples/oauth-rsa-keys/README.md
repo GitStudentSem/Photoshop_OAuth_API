@@ -105,7 +105,7 @@ npm run dev
 
 - `productConfig` в `src/appInfo.ts` — `installationIdPrefix` (серверный `keyprefix`) и `licenseHashSalt` (серверный `keysalt`). См. таблицу продуктов ниже.
 - `publicKey` в `src/appInfo.ts` (встройте ваш публичный ключ).
-- `client_id` / `programName` в OAuth-части.
+- `applicationName` в `src/applicationName.ts` — единый `client_id` / `programName` для OAuth и лицензии.
 - Серверный endpoint выдачи лицензии (куда клиент отправляет `email + installationId`).
 - **Пути хранения anchor-метки для `deviceId`** в `src/generateDeviceId.ts` (функция `getTimeStamp`) — см. ниже.
 

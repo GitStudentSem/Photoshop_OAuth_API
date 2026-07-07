@@ -32,8 +32,8 @@
 
 | # | Что менять | Должно быть (пример Vectorscope) | Где обычно лежит |
 | --- | --- | --- | --- |
-| 1 | OAuth `client_id` | `retouch4me_vectorscope_panel` | `getAuthLink`, `auth.ts`, `OAUTH_CLIENT_ID` |
-| 2 | `programName` / `application` | `retouch4me_vectorscope_panel` | `getLicenceKey`, запрос на `3dlutcreator.com` |
+| 1 | OAuth `client_id` / `application` | `retouch4me_vectorscope_panel` | `src/applicationName.ts` — используется в `getLink`, `getLicenceKey` |
+| 2 | `programName` | то же значение, что `applicationName` | тот же `src/applicationName.ts` |
 | 3 | `installationIdPrefix` | `R4VS` | `productConfig`, `appInfo.ts` |
 | 4 | `licenseHashSalt` | `''` | `productConfig` (у Waveform — `waveform`) |
 | 5 | Сборка `installationId` | `R4VS-<deviceId>` | `initAppInfo`, `getInstallationId` — **часто захардкожено отдельно от п.3!** |
@@ -43,7 +43,7 @@
 **Правило:** префикс в п.3 и п.5 — **одна и та же строка**.  
 Если в `productConfig` стоит `R4VS`, а в `getInstallationId` другой prefix (например `VS-`) — лицензия **не пройдёт проверку**, даже если сервер выдал ключ.
 
-Сверяйтесь с эталоном: [`src/appInfo.ts`](./src/appInfo.ts) и [`src/auth.ts`](./src/auth.ts).
+Сверяйтесь с эталоном: [`src/appInfo.ts`](./src/appInfo.ts), [`src/applicationName.ts`](./src/applicationName.ts) и [`src/auth.ts`](./src/auth.ts).
 
 ---
 
@@ -151,7 +151,7 @@
 
 Проверьте:
 
-- `application` = ваш `programName` (не `retouch4me_photoshop_panel`).
+- `application` = ваш `applicationName` из `src/applicationName.ts` (не `retouch4me_photoshop_panel`).
 - `installationId` = `<keyprefix>-<deviceId>` (префикс **с** дефисом).
 - `deviceId` **без** префикса.
 

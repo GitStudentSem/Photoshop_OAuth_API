@@ -2,6 +2,7 @@ import CryptoJS from "crypto-js";
 import { shell } from "uxp";
 import OauthAPI, { OAuthAPIError } from "@relu-ps/oauth-api";
 import { initServerSelect } from "../../shared/oauthStaticServers";
+import { applicationName } from "./applicationName";
 import UserStore from "./UserStore";
 
 const catchError = (
@@ -131,7 +132,12 @@ export const getRetouchToken = async (): Promise<void> => {
 
   const email = localStorage.getItem("userEmail");
 
-  if (!email || email === "null" || email === "undefined" || email === "false") {
+  if (
+    !email ||
+    email === "null" ||
+    email === "undefined" ||
+    email === "false"
+  ) {
     UserStore.logout();
     throw new Error("Email was not found.");
   }
@@ -141,7 +147,7 @@ export const getRetouchToken = async (): Promise<void> => {
       email,
       generateSession(),
       localStorage.getItem("deviceid") || "",
-      "retouch4me_photoshop_panel",
+      applicationName,
     );
 
     UserStore.setRemainingRetouch(tokenData.remaining.professional);
@@ -196,7 +202,12 @@ export const onAuth = async (): Promise<void> => {
     .replace(/\//g, "_")
     .replace(/=+$/, "");
 
-  const link = oauth.getLink(deviceid, codeVerifier, codeChallenge);
+  const link = oauth.getLink(
+    deviceid,
+    codeVerifier,
+    codeChallenge,
+    applicationName,
+  );
 
   await shell.openExternal(link, "Open browser for login");
   await getToken(codeVerifier);
@@ -247,7 +258,9 @@ initServerSelect(oauth, () => {
 });
 
 setUserInfo();
-document.getElementById("authorize")?.addEventListener("click", onAuthorizeClick);
+document
+  .getElementById("authorize")
+  ?.addEventListener("click", onAuthorizeClick);
 
 document.getElementById("logout")?.addEventListener("click", () => {
   UserStore.logout();
