@@ -168,6 +168,7 @@ export default class OauthAPI {
    * @param  deviceid - Hardware identifier, must be tied to the computer.
    * @param  codeVerifier - Calculated value,
    * @param  codeChallenge - Computed value,
+   * @param  application - for example "retouch4me_photoshop_panel".
    * @returns Authorization URL that should be opened by a user to start OAuth flow.
    * @example
    * ```ts
@@ -181,13 +182,13 @@ export default class OauthAPI {
     deviceid: string,
     codeVerifier: string,
     codeChallenge: string,
+    application: string,
   ): string {
     const responseType = "code";
-    const clientId = "retouch4me_photoshop_panel";
     const scope = "profile";
     const codeChallengeMethod = "S256";
 
-    const link = `${this.authorizeLink}?response_type=${responseType}&client_id=${clientId}&redirect_uri=${this.redirectLink}&scope=${scope}&code_challenge=${codeChallenge}&code_challenge_method=${codeChallengeMethod}&code_verifier=${codeVerifier}&deviceid=${deviceid}`;
+    const link = `${this.authorizeLink}?response_type=${responseType}&client_id=${application}&redirect_uri=${this.redirectLink}&scope=${scope}&code_challenge=${codeChallenge}&code_challenge_method=${codeChallengeMethod}&code_verifier=${codeVerifier}&deviceid=${deviceid}`;
 
     return link;
   }
